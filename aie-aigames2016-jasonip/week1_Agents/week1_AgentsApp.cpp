@@ -21,6 +21,12 @@ bool week1_AgentsApp::startup() {
 	m_player.addBehaviour(&m_keyboardBehaviour);
 	m_player.setPosition(getWindowWidth() * 0.5f, getWindowHeight() * 0.5f);
 	
+	m_followBehaviour.setSpeed(100);
+	m_followBehaviour.setTarget(&m_player);
+
+	m_enemy.addBehaviour(&m_followBehaviour);
+	m_enemy.setPosition(getWindowWidth() * 0.25f, getWindowHeight() * 0.25f);
+	
 	return true;
 }
 
@@ -33,6 +39,7 @@ void week1_AgentsApp::shutdown() {
 void week1_AgentsApp::update(float deltaTime) {
 
 	m_player.update(deltaTime);
+	m_enemy.update(deltaTime);
 
 	// input example
 	aie::Input* input = aie::Input::getInstance();
@@ -57,6 +64,11 @@ void week1_AgentsApp::draw() {
 	//draw the player as a green circle
 	m_player.getPosition(&x, &y);
 	m_2dRenderer->setRenderColour(0, 1, 0);
+	m_2dRenderer->drawCircle(x, y, 10);
+
+	// draw the enemy as a red circle
+	m_enemy.getPosition(&x, &y);
+	m_2dRenderer->setRenderColour(1, 0, 0);
 	m_2dRenderer->drawCircle(x, y, 10);
 
 	// output some text

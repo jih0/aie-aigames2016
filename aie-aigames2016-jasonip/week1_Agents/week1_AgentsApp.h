@@ -5,6 +5,7 @@
 
 #include "GameObject.h"
 #include "KeyboardBehaviour.h"
+#include "FollowBehaviour.h"
 
 class week1_AgentsApp : public aie::Application {
 public:
@@ -26,4 +27,6 @@ protected:
 	GameObject			m_player;
 	KeyboardBehaviour	m_keyboardBehaviour;
 
+	GameObject			m_enemy;
+	FollowBehaviour		m_followBehaviour;
 };

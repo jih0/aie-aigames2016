@@ -89,6 +89,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\aiToolkit\FollowBehaviour.cpp" />
     <ClCompile Include="..\aiToolkit\GameObject.cpp" />
     <ClCompile Include="..\aiToolkit\KeyboardBehaviour.cpp" />
     <ClCompile Include="week1_AgentsApp.cpp" />
@@ -96,6 +97,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\aiToolkit\Behaviour.h" />
+    <ClInclude Include="..\aiToolkit\FollowBehaviour.h" />
     <ClInclude Include="..\aiToolkit\GameObject.h" />
     <ClInclude Include="..\aiToolkit\KeyboardBehaviour.h" />
     <ClInclude Include="week1_AgentsApp.h" />
