@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="AIToolkit">
+      <UniqueIdentifier>{53644ee2-a7e1-45c1-abd6-f9d1a14f026c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="week1_AgentsApp.cpp">
@@ -21,31 +24,31 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\aiToolkit\FollowBehaviour.cpp">
+      <Filter>AIToolkit</Filter>
+    </ClCompile>
     <ClCompile Include="..\aiToolkit\GameObject.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>AIToolkit</Filter>
     </ClCompile>
     <ClCompile Include="..\aiToolkit\KeyboardBehaviour.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\aiToolkit\FollowBehaviour.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>AIToolkit</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="week1_AgentsApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\aiToolkit\GameObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\aiToolkit\Behaviour.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\aiToolkit\KeyboardBehaviour.h">
-      <Filter>Header Files</Filter>
+      <Filter>AIToolkit</Filter>
     </ClInclude>
     <ClInclude Include="..\aiToolkit\FollowBehaviour.h">
-      <Filter>Header Files</Filter>
+      <Filter>AIToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="..\aiToolkit\GameObject.h">
+      <Filter>AIToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="..\aiToolkit\KeyboardBehaviour.h">
+      <Filter>AIToolkit</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
