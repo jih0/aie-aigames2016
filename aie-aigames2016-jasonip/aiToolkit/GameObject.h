@@ -12,7 +12,7 @@ public:
 
 	// movement function
 	void setPosition(float x, float y)		{ m_x = x; m_y = y; }
-	void getPosition(float* x, float* y)	{ *x = m_x; *y = m_y; }
+	void getPosition(float* x, float* y) const	{ *x = m_x; *y = m_y; }
 	void translate(float x, float y)		{ m_x += x; m_y += y; }
 
 	// add a behaviour

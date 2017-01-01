@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GameObject.h"
+
 class Condition {
 public:
 
@@ -41,4 +43,50 @@ private:
 
 	const float*	m_value;
 	float			m_compare;
+};
+
+class WithinRangeCondition : public Condition {
+public:
+
+	WithinRangeCondition(const GameObject* targetA, const GameObject* targetB, float range)
+		: m_targetA(targetA), m_targetB(targetB), m_range(range) {}
+	virtual ~WithinRangeCondition() {}
+
+	virtual bool test() const {
+		// get target position
+		float tx = 0, ty = 0;
+		m_targetA->getPosition(&tx, &ty);
+
+		// get my position
+		float x = 0, y = 0;
+		m_targetB->getPosition(&x, &y);
+
+		// compare the two and get the distance between them
+		float xDiff = tx - x;
+		float yDiff = ty - y;
+		float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
+
+		return distance <= m_range;
+	}
+
+private:
+
+	const GameObject* m_targetA;
+	const GameObject* m_targetB;
+	float m_range;
+};
+
+class NotCondition : public Condition {
+public:
+
+	NotCondition(const Condition* condition) : m_condition(condition) {}
+	virtual ~NotCondition() {}
+
+	virtual bool test() const {
+		return !m_condition->test();
+	}
+
+private:
+
+	const Condition* m_condition;
 };

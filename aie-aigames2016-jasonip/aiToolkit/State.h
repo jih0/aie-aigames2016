@@ -4,7 +4,22 @@
 #include <vector>
 #include "Condition.h"
 
-class Transition;
+class State;
+
+class Transition {
+public:
+
+	Transition(State* target, Condition* condition) : m_target(target), m_condition(condition) {}
+	~Transition() { delete m_condition; }
+
+	State* getTargetState() { return m_target; }
+	bool hasTriggered() { return m_condition->test(); }
+
+private:
+
+	State*		m_target;
+	Condition*	m_condition;
+};
 
 // abstract class
 class State {
@@ -63,19 +78,4 @@ protected:
 	State* m_currentState;
 
 	std::vector<State*> m_states;
-};
-
-class Transition {
-public:
-
-	Transition(State* target, Condition* condition) : m_target(target), m_condition(condition) {}
-	~Transition() { delete m_condition; }
-
-	State* getTargetState() { return m_target; }
-	bool hasTriggered() { return m_condition->test(); }
-
-private:
-
-	State*		m_target;
-	Condition*	m_condition;
 };

@@ -30,23 +30,38 @@ bool week2_FiniteStateMachinesApp::startup() {
 	// created new states
 	auto attackState = new AttackState(&m_player, 150);
 	auto idleState = new IdleState();
+	auto patrolState = new PatrolState(75);
+
+	patrolState->addWaypoint(getWindowWidth() * 0.25f, getWindowHeight() * 0.25f);
+	patrolState->addWaypoint(getWindowWidth() * 0.25f, getWindowHeight() * 0.75f);
+	patrolState->addWaypoint(getWindowWidth() * 0.75f, getWindowHeight() * 0.75f);
+	patrolState->addWaypoint(getWindowWidth() * 0.75f, getWindowHeight() * 0.25f);
 	
 	// setup conditions that will trigger transition
 	Condition* attackTimerCondition = new FloatGreaterCondition(attackState->getTimerPtr(), 5);
 	Condition* idleTimerCondition = new FloatGreaterCondition(idleState->getTimerPtr(), 2);
 	
+	Condition* distanceCondition = new WithinRangeCondition(&m_player, &m_enemy, 200);
+
 	// add transitions
 
 	// attack to idle
 	attackState->addTransition(new Transition(idleState, attackTimerCondition));
 
 	// idle to attack
-	idleState->addTransition(new Transition(attackState, idleTimerCondition));
+	idleState->addTransition(new Transition(patrolState, idleTimerCondition));
+	idleState->addTransition(new Transition(attackState, distanceCondition));
+
+	// patrol to attack
+	patrolState->addTransition(new Transition(attackState, distanceCondition));
+
+
 
 	m_guardFSM.addState(attackState);
 	m_guardFSM.addState(idleState);
+	m_guardFSM.addState(patrolState);
 
-	m_guardFSM.setInitialState(attackState);
+	m_guardFSM.setInitialState(patrolState);
 	
 	return true;
 }
