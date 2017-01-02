@@ -40,26 +40,37 @@ bool week2_FiniteStateMachinesApp::startup() {
 	// setup conditions that will trigger transition
 	Condition* attackTimerCondition = new FloatGreaterCondition(attackState->getTimerPtr(), 5);
 	Condition* idleTimerCondition = new FloatGreaterCondition(idleState->getTimerPtr(), 2);
-	
 	Condition* distanceCondition = new WithinRangeCondition(&m_player, &m_enemy, 200);
+	auto outsideRangeCondition = new NotCondition(distanceCondition);
 
 	// add transitions
+	auto attackToIdleTransition = new Transition(idleState, attackTimerCondition);
+	auto toAttackTransition = new Transition(attackState, distanceCondition);
+	auto idleToPatrolTransition = new Transition(patrolState, idleTimerCondition);
 
 	// attack to idle
-	attackState->addTransition(new Transition(idleState, attackTimerCondition));
+	attackState->addTransition(attackToIdleTransition);
 
 	// idle to attack
-	idleState->addTransition(new Transition(patrolState, idleTimerCondition));
-	idleState->addTransition(new Transition(attackState, distanceCondition));
+	idleState->addTransition(idleToPatrolTransition);
+	idleState->addTransition(toAttackTransition);
 
 	// patrol to attack
-	patrolState->addTransition(new Transition(attackState, distanceCondition));
+	patrolState->addTransition(toAttackTransition);
 
-
-
+	// store everything in the state machine
 	m_guardFSM.addState(attackState);
 	m_guardFSM.addState(idleState);
 	m_guardFSM.addState(patrolState);
+
+	m_guardFSM.addCondition(distanceCondition);
+	m_guardFSM.addCondition(idleTimerCondition);
+	m_guardFSM.addCondition(attackTimerCondition);
+	m_guardFSM.addCondition(outsideRangeCondition);
+
+	m_guardFSM.addTransition(attackToIdleTransition);
+	m_guardFSM.addTransition(toAttackTransition);
+	m_guardFSM.addTransition(idleToPatrolTransition);
 
 	m_guardFSM.setInitialState(patrolState);
 	

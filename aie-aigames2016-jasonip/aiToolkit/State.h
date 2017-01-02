@@ -10,7 +10,7 @@ class Transition {
 public:
 
 	Transition(State* target, Condition* condition) : m_target(target), m_condition(condition) {}
-	~Transition() { delete m_condition; }
+	~Transition() {}
 
 	State* getTargetState() { return m_target; }
 	bool hasTriggered() { return m_condition->test(); }
@@ -29,10 +29,7 @@ class State {
 public:
 
 	State() : m_timer(0) {}
-	virtual ~State() {
-		for (auto transition : m_transitions)
-			delete transition;
-	}
+	virtual ~State() {}
 
 	// pure virtual
 	virtual void	update(GameObject* gameObject, float deltaTime) = 0;
@@ -61,12 +58,18 @@ public:
 
 	FiniteStateMachine() : m_currentState(nullptr) {}
 	virtual ~FiniteStateMachine() {
-		for (auto state : m_states)
-			delete state;
+		for (auto s : m_states)
+			delete s;
+		for (auto t : m_transitions)
+			delete t;
+		for (auto c : m_conditions)
+			delete c;
 	}
 
 	// add new states, takes ownership
 	void addState(State* state) { m_states.push_back(state); }
+	void addTransition(Transition* state) { m_transitions.push_back(state); }
+	void addCondition(Condition* state) { m_conditions.push_back(state); }
 
 	// set our starting state
 	void setInitialState(State* state) { if (m_currentState == nullptr) m_currentState = state; }
@@ -77,5 +80,7 @@ protected:
 
 	State* m_currentState;
 
-	std::vector<State*> m_states;
+	std::vector<State*>			m_states;
+	std::vector<Transition*>	m_transitions;
+	std::vector<Condition*>		m_conditions;
 };
