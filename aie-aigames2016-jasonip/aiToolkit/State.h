@@ -13,7 +13,7 @@ public:
 	~Transition() {}
 
 	State* getTargetState() { return m_target; }
-	bool hasTriggered() { return m_condition->test(); }
+	bool hasTriggered(GameObject* gameObject) { return m_condition->test(gameObject); }
 
 private:
 
@@ -35,17 +35,17 @@ public:
 	virtual void	update(GameObject* gameObject, float deltaTime) = 0;
 
 	// triggers for enter / exit
-	virtual void	onEnter() {}
-	virtual void	onExit() {}
-
-	const float* getTimerPtr() const { return &m_timer; }
-	float getTimer() const { return m_timer; }
-
+	virtual void	onEnter(GameObject* gameObject) {}
+	virtual void	onExit(GameObject* gameObject) {}
+	
 	void addTransition(Transition* transition) {
 		m_transitions.push_back(transition);
 	}
 
-	Transition* getTriggeredTransition();
+	Transition* getTriggeredTransition(GameObject* gameObject);
+
+	const float* getTimerPtr() const { return &m_timer; }
+	float getTimer() const { return m_timer; }
 
 protected:
 

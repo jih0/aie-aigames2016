@@ -1,9 +1,9 @@
 #include "State.h"
 
-Transition* State::getTriggeredTransition() {
+Transition* State::getTriggeredTransition(GameObject* gameObject) {
 
 	for (auto transition : m_transitions) {
-		if (transition->hasTriggered())
+		if (transition->hasTriggered(gameObject))
 			return transition;
 	}
 
@@ -13,16 +13,16 @@ Transition* State::getTriggeredTransition() {
 bool FiniteStateMachine::execute(GameObject* gameObject, float deltaTime) {
 	if (m_currentState != nullptr) {
 
-		Transition* transition = m_currentState->getTriggeredTransition();
+		Transition* transition = m_currentState->getTriggeredTransition(gameObject);
 
 		if (transition != nullptr) {
 
-			m_currentState->onExit();
+			m_currentState->onExit(gameObject);
 
 			m_currentState = transition->getTargetState();
 
 			m_currentState->m_timer = 0;
-			m_currentState->onEnter();
+			m_currentState->onEnter(gameObject);
 		}
 
 		// accumulate time and update state

@@ -8,7 +8,7 @@ public:
 	Condition() {}
 	virtual ~Condition() {}
 
-	virtual bool test() const = 0;
+	virtual bool test(GameObject* gameObject) const = 0;
 };
 
 class FloatRangeCondition : public Condition {
@@ -19,7 +19,7 @@ public:
 	}
 	virtual ~FloatRangeCondition() {}
 
-	virtual bool test() const {
+	virtual bool test(GameObject* gameObject) const {
 		return(m_min <= *m_value) && (m_max >= *m_value);
 	}
 private:
@@ -36,7 +36,7 @@ public:
 	}
 	virtual ~FloatGreaterCondition() {}
 
-	virtual bool test() const {
+	virtual bool test(GameObject* gameObject) const {
 		return *m_value > m_compare;
 	}
 private:
@@ -48,18 +48,18 @@ private:
 class WithinRangeCondition : public Condition {
 public:
 
-	WithinRangeCondition(const GameObject* targetA, const GameObject* targetB, float range)
-		: m_targetA(targetA), m_targetB(targetB), m_range(range) {}
+	WithinRangeCondition(const GameObject* target, float range)
+		: m_target(target), m_range(range) {}
 	virtual ~WithinRangeCondition() {}
 
-	virtual bool test() const {
+	virtual bool test(GameObject* gameObject) const {
 		// get target position
 		float tx = 0, ty = 0;
-		m_targetA->getPosition(&tx, &ty);
+		m_target->getPosition(&tx, &ty);
 
 		// get my position
 		float x = 0, y = 0;
-		m_targetB->getPosition(&x, &y);
+		gameObject->getPosition(&x, &y);
 
 		// compare the two and get the distance between them
 		float xDiff = tx - x;
@@ -71,8 +71,7 @@ public:
 
 private:
 
-	const GameObject* m_targetA;
-	const GameObject* m_targetB;
+	const GameObject* m_target;
 	float m_range;
 };
 
@@ -82,8 +81,8 @@ public:
 	NotCondition(const Condition* condition) : m_condition(condition) {}
 	virtual ~NotCondition() {}
 
-	virtual bool test() const {
-		return !m_condition->test();
+	virtual bool test(GameObject* gameObject) const {
+		return !m_condition->test(gameObject);
 	}
 
 private:

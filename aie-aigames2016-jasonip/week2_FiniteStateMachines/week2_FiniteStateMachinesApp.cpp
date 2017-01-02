@@ -19,9 +19,7 @@ bool week2_FiniteStateMachinesApp::startup() {
 	m_font = new aie::Font("./font/consolas.ttf", 32);
 
 	m_keyboardBehaviour.setSpeed(400);
-
 	m_player.setPosition(getWindowWidth() * 0.5f, getWindowHeight() * 0.5f);
-
 	m_player.addBehaviour(&m_keyboardBehaviour);
 
 	// guard
@@ -40,7 +38,7 @@ bool week2_FiniteStateMachinesApp::startup() {
 	// setup conditions that will trigger transition
 	Condition* attackTimerCondition = new FloatGreaterCondition(attackState->getTimerPtr(), 5);
 	Condition* idleTimerCondition = new FloatGreaterCondition(idleState->getTimerPtr(), 2);
-	Condition* distanceCondition = new WithinRangeCondition(&m_player, &m_enemy, 200);
+	Condition* distanceCondition = new WithinRangeCondition(&m_player, 200);
 	auto outsideRangeCondition = new NotCondition(distanceCondition);
 
 	// add transitions
@@ -116,8 +114,12 @@ void week2_FiniteStateMachinesApp::draw() {
 	m_2dRenderer->setRenderColour(1, 0, 0);
 	m_2dRenderer->drawCircle(x, y, 10);
 	
+	// draw enemy range
+	m_2dRenderer->setRenderColour(1, 1, 0, 0.25f);
+	m_2dRenderer->drawCircle(x, y, 200);
+
 	// output some text
-	m_2dRenderer->drawText(m_font, "Press ESC to quit", 0, 0);
+	m_2dRenderer->drawText(m_font, "Press ESC to quit", 0, -0.1f);
 
 	// done drawing sprites
 	m_2dRenderer->end();
