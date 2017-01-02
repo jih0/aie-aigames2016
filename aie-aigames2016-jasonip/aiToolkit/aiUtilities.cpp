@@ -1,16 +1,15 @@
 #include "aiUtilities.h"
 
 #include <math.h>
-#include <glm/ext.hpp>
 
 // returns true if the ray intersects the circle
 bool rayCircleIntersection(float px, float py,	// ray start
-						   float dx, float dy,	// ray direction
-						   float cx, float cy, float r,	// circle position and radius
-						   float& ix, float& iy,	// intersection point
-						   float* t) {	// distance along normalised ray direction to intersection
+	float dx, float dy,	// ray direction
+	float cx, float cy, float r,	// circle position and radius
+	float& ix, float& iy,	// intersection point
+	float* t) {	// distance along normalised ray direction to intersection
 
-													// normalise direction
+	// normalise direction
 	float temp = dx * dx + dy * dy;
 	if (temp == 0)
 		return false;
@@ -60,84 +59,5 @@ bool rayCircleIntersection(float px, float py,	// ray start
 	if (t != nullptr)
 		*t = temp;
 
-	return true;
-}
-
-bool rayBoxIntersection(float px, float py,	// ray start
-						float dx, float dy,	// ray direction
-						float x, float y, float w, float h,	// box position and size
-						float& nx, float& ny,	// normal of intersection
-						float* t) {	// distance along ray direction to intersection
-
-	using glm::max;
-	using glm::min;
-
-	bool inside = true;
-
-	nx = ny = 0;
-
-	float xt;
-	if (px < x) {
-		xt = x - px;
-		if (xt > dx)
-			return false;
-		inside = false;
-		xt /= dx;
-		nx = -1;
-	}
-	else if (px > (x + w)) {
-		xt = (x + w) - px;
-		if (xt < dx)
-			return false;
-		inside = false;
-		xt /= dx;
-		nx = 1;
-	}
-	else {
-		xt = -1;
-	}
-
-	float yt;
-	if (py < y) {
-		yt = y - py;
-		if (yt > dy)
-			return false;
-		inside = false;
-		yt /= dy;
-		ny = -1;
-	}
-	else if (py > (y + h)) {
-		yt = (y + h) - py;
-		if (yt < dy)
-			return false;
-		inside = false;
-		yt /= dy;
-		ny = 1;
-	}
-	else {
-		yt = -1;
-	}
-
-	if (inside) {
-		if (t != nullptr)
-			*t = 0;
-	}
-	else if (yt > xt) {
-		// intersect with y plane?
-		float ty = py + dy * yt;
-		if (ty < y || ty > (y + h))
-			return false;
-		if (t != nullptr)
-			*t = yt;
-	}
-	else {
-		// intersect with x plane?
-		float tx = px + dx * xt;
-		if (tx < x || tx > (x + w))
-			return false;
-		if (t != nullptr)
-			*t = xt;
-	}
-	
 	return true;
 }

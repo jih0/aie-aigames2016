@@ -21,15 +21,26 @@ public:
 
 protected:
 
+	void screenWrap(float& x, float& y);
+
 	aie::Renderer2D*	m_2dRenderer;
 	aie::Font*			m_font;
 
 	GameObject			m_player;
 	KeyboardBehaviour	m_keyboardBehaviour;
 
-	GameObject			m_enemies[50];
+	GameObject			m_enemies[10];
+	FiniteStateMachine	m_fsm[10];
+
 	SteeringBehaviour	m_steeringBehaviour;
 	SeekForce			m_seek;
 	FleeForce			m_flee;
 	WanderForce			m_wander;
+	ObstacleAvoidanceForce	m_avoid;
+
+	struct Circle {
+		float x, y, r;
+	};
+
+	std::vector<Circle>	m_obstacles;
 };

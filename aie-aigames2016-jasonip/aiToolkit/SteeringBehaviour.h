@@ -23,6 +23,7 @@ struct WeightedForce {
 	float weight;
 };
 
+// steering behaviour
 class SteeringBehaviour : public Behaviour {
 public:
 
@@ -33,6 +34,13 @@ public:
 		m_forces.push_back({ force, weight });
 	}
 	
+	void setWeightForForce(SteeringForce* force, float weight) {
+		for (auto& wf : m_forces) {
+			if (wf.force == force)
+				wf.weight = weight;
+		}
+	}
+
 	virtual bool execute(GameObject* gameObject, float deltaTime) {
 		
 		Force force = { 0, 0 };
@@ -65,7 +73,14 @@ public:
 		m_forces.push_back({ force, weight });
 	}
 
-	virtual bool execute(GameObject* gameObject, float deltaTime) {
+	void setWeightForForce(SteeringForce* force, float weight) {
+		for (auto& wf : m_forces) {
+			if (wf.force == force)
+				wf.weight = weight;
+		}
+	}
+
+	virtual void update(GameObject* gameObject, float deltaTime) {
 
 		Force force = { 0, 0 };
 
@@ -78,7 +93,6 @@ public:
 		}
 
 		gameObject->addForce(force.x * deltaTime, force.y * deltaTime);
-		return true;
 	}
 
 protected:
@@ -154,4 +168,31 @@ public:
 
 	virtual Force getForce(GameObject* gameObject) const;
 
+};
+
+// circle obstacles struct
+struct Obstacle {
+	float x, y, r;
+};
+
+class ObstacleAvoidanceForce : public SteeringForce {
+public:
+
+	ObstacleAvoidanceForce() {}
+	virtual ~ObstacleAvoidanceForce() {}
+
+	void setFeelerLength(float length) { m_feelerLength = length; }
+
+	void addObstacle(float x, float y, float r) {
+		m_obstacles.push_back({ x, y, r });
+	}
+
+	void clearObstacles() { m_obstacles.clear(); }
+
+	virtual Force getForce(GameObject* gameObject) const;
+
+protected:
+
+	float					m_feelerLength;
+	std::vector<Obstacle>	m_obstacles;
 };

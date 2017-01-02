@@ -1,4 +1,5 @@
 #include "SteeringBehaviour.h"
+#include "aiUtilities.h"
 
 #include <glm/ext.hpp>
 
@@ -190,4 +191,49 @@ Force WanderForce::getForce(GameObject* gameObject) const {
 
 	return{ wanderX * gameObject->getMaxForce(), wanderY * gameObject->getMaxForce() };
 
+}
+
+Force ObstacleAvoidanceForce::getForce(GameObject* gameObject) const {
+
+	Force force = {};
+
+	// create feeler
+	float x, y, vx, vy;
+	gameObject->getPosition(&x, &y);
+	gameObject->getVelocity(&vx, &vy);
+
+	float ix, iy, t;
+
+	// are we moving?
+	float magSqr = vx * vx + vy * vy;
+	if (magSqr > 0) {
+
+		// loop through all obstacles and find collisions
+		for (auto& obstacle : m_obstacles) {
+			if (rayCircleIntersection(	x, y,
+										vx, vy,
+										obstacle.x, obstacle.y, obstacle.r,
+										ix, iy,
+										&t)) {
+				// is the collision within range? where t is the distance to collision
+				if (t >= 0 &&
+					t <= m_feelerLength) {
+
+					// get direction vector and make it a unit vector by dividing by the circle obstacle's radius
+					force.x += (ix - obstacle.x) / obstacle.r;
+					force.y += (iy - obstacle.y) / obstacle.r;
+				}
+			}
+		}
+	}
+
+	// normalise force
+	magSqr = force.x * force.x + force.y * force.y;
+	if (magSqr > 0) {
+		magSqr = sqrt(magSqr);
+		force.x /= magSqr;
+		force.y /= magSqr;
+	}
+
+	return{ force.x * gameObject->getMaxForce(), force.y * gameObject->getMaxForce() };
 }
