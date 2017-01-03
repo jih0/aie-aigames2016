@@ -36,6 +36,9 @@
     <ClCompile Include="..\aiToolkit\State.cpp">
       <Filter>AIToolkit</Filter>
     </ClCompile>
+    <ClCompile Include="..\aiToolkit\Blackboard.cpp">
+      <Filter>AIToolkit</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="week2_FiniteStateMachinesApp.h">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\aiToolkit\Condition.h">
+      <Filter>AIToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="..\aiToolkit\Blackboard.h">
       <Filter>AIToolkit</Filter>
     </ClInclude>
   </ItemGroup>

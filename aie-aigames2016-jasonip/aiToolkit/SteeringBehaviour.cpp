@@ -1,5 +1,6 @@
 #include "SteeringBehaviour.h"
 #include "aiUtilities.h"
+#include "Blackboard.h"
 
 #include <glm/ext.hpp>
 
@@ -29,7 +30,10 @@ Force SeekForce::getForce(GameObject* gameObject) const {
 		yDiff /= distance;
 	}
 
-	return { xDiff * gameObject->getMaxForce(), yDiff * gameObject->getMaxForce() };
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return { xDiff * maxForce, yDiff * maxForce };
 }
 
 Force FleeForce::getForce(GameObject* gameObject) const {
@@ -58,7 +62,10 @@ Force FleeForce::getForce(GameObject* gameObject) const {
 		yDiff /= distance;
 	}
 
-	return{ xDiff * gameObject->getMaxForce(), yDiff * gameObject->getMaxForce() };
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return{ xDiff * maxForce, yDiff * maxForce };
 }
 
 Force PursueForce::getForce(GameObject* gameObject) const {
@@ -68,12 +75,12 @@ Force PursueForce::getForce(GameObject* gameObject) const {
 	m_target->getPosition(&tx, &ty);
 	
 	// get target velocity
-	float tvx = 0, tvy = 0;
-	m_target->getVelocity(&tvx, &tvy);
+	Vector2* velocity = nullptr;
+	gameObject->getBlackboard().get("velocity", &velocity);
 
 	// add velocity to target
-	tx += tvx;
-	ty += tvy;
+	tx += velocity->x;
+	ty += velocity->y;
 
 	// get my position
 	float x = 0, y = 0;
@@ -95,7 +102,10 @@ Force PursueForce::getForce(GameObject* gameObject) const {
 		yDiff /= distance;
 	}
 
-	return{ xDiff * gameObject->getMaxForce(), yDiff * gameObject->getMaxForce() };
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return{ xDiff * maxForce, yDiff * maxForce };
 }
 
 Force EvadeForce::getForce(GameObject* gameObject) const {
@@ -105,12 +115,12 @@ Force EvadeForce::getForce(GameObject* gameObject) const {
 	m_target->getPosition(&tx, &ty);
 
 	// get target velocity
-	float tvx = 0, tvy = 0;
-	m_target->getVelocity(&tvx, &tvy);
+	Vector2* velocity = nullptr;
+	gameObject->getBlackboard().get("velocity", &velocity);
 
 	// add velocity to target
-	tx += tvx;
-	ty += tvy;
+	tx += velocity->x;
+	ty += velocity->y;
 
 	// get my position
 	float x = 0, y = 0;
@@ -132,7 +142,10 @@ Force EvadeForce::getForce(GameObject* gameObject) const {
 		yDiff /= distance;
 	}
 
-	return{ xDiff * gameObject->getMaxForce(), yDiff * gameObject->getMaxForce() };
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return{ xDiff * maxForce, yDiff * maxForce };
 }
 
 // possible glm implementation
@@ -146,10 +159,14 @@ Force EvadeForce::getForce(GameObject* gameObject) const {
 
 Force WanderForce::getForce(GameObject* gameObject) const {
 	
-	glm::vec2 jitterOffset = glm::circularRand(gameObject->getWanderJitter());
+	WanderData* wd = nullptr;
+	if (gameObject->getBlackboard().get("wanderData", &wd) == false) {
+		return{ 0, 0 };
+	}
 
-	float wanderX = 0, wanderY = 0;
-	gameObject->getWanderTarget(&wanderX, &wanderY);
+	glm::vec2 jitterOffset = glm::circularRand(wd->jitter);
+
+	float wanderX = wd->x, wanderY = wd->y;
 
 	// applied the jitter
 	wanderX += jitterOffset.x;
@@ -158,15 +175,18 @@ Force WanderForce::getForce(GameObject* gameObject) const {
 	float magnitude = sqrt(wanderX * wanderX + wanderY * wanderY);
 
 	// bring it back to a radius around the game object
-	wanderX = wanderX / magnitude * gameObject->getWanderRadius();
-	wanderY = wanderY / magnitude * gameObject->getWanderRadius();
+	wanderX = wanderX / magnitude * wd->radius;
+	wanderY = wanderY / magnitude * wd->radius;
 
 	// store the target back into the game object
-	gameObject->setWanderTarget(wanderX, wanderY);
+	wd->x = wanderX;
+	wd->y = wanderY;
 
 	// access the game object's velocity as a unit vector
-	float vx = 0, vy = 0;
-	gameObject->getVelocity(&vx, &vy);
+	Vector2* velocity = nullptr;
+	gameObject->getBlackboard().get("velocity", &velocity);
+	float vx = velocity->x;
+	float vy = velocity->y;
 
 	// normalise and protect from divide by 0 error
 	magnitude = vx * vx + vy * vy;
@@ -177,8 +197,8 @@ Force WanderForce::getForce(GameObject* gameObject) const {
 	}
 
 	// combine velocity direction with wanter target to offset
-	wanderX += vx * gameObject->getWanderOffset();
-	wanderY += vy * gameObject->getWanderOffset();
+	wanderX += vx * wd->offset;
+	wanderY += vy * wd->offset;
 
 	// normalise the new direction
 	magnitude = wanderX * wanderX + wanderY * wanderY;
@@ -189,7 +209,10 @@ Force WanderForce::getForce(GameObject* gameObject) const {
 		wanderY /= magnitude;
 	}
 
-	return{ wanderX * gameObject->getMaxForce(), wanderY * gameObject->getMaxForce() };
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return{ wanderX * maxForce, wanderY * maxForce };
 
 }
 
@@ -198,20 +221,22 @@ Force ObstacleAvoidanceForce::getForce(GameObject* gameObject) const {
 	Force force = {};
 
 	// create feeler
-	float x, y, vx, vy;
+	float x, y;
 	gameObject->getPosition(&x, &y);
-	gameObject->getVelocity(&vx, &vy);
+	Vector2* velocity = nullptr;
+	gameObject->getBlackboard().get("velocity", &velocity);
+
 
 	float ix, iy, t;
 
 	// are we moving?
-	float magSqr = vx * vx + vy * vy;
+	float magSqr = velocity->x * velocity->x + velocity->y * velocity->y;
 	if (magSqr > 0) {
 
 		// loop through all obstacles and find collisions
 		for (auto& obstacle : m_obstacles) {
 			if (rayCircleIntersection(	x, y,
-										vx, vy,
+										velocity->x, velocity->y,
 										obstacle.x, obstacle.y, obstacle.r,
 										ix, iy,
 										&t)) {
@@ -224,6 +249,35 @@ Force ObstacleAvoidanceForce::getForce(GameObject* gameObject) const {
 					force.y += (iy - obstacle.y) / obstacle.r;
 				}
 			}
+
+			// rotate feeler about 30 degrees
+			float s = sinf(3.14159f*0.15f);
+			float c = cosf(3.14159f*0.15f);
+			if (rayCircleIntersection(	x, y,
+										velocity->x * c - velocity->y * s, velocity->x * s + velocity->y * c, // apply rotation to vector
+										obstacle.x, obstacle.y, obstacle.r,
+										ix, iy, &t)) {
+				if (t >= 0 &&
+					t <= m_feelerLength * 0.5f) { // scale feeler 50%
+					force.x += (ix - obstacle.x) / obstacle.r;
+					force.y += (iy - obstacle.y) / obstacle.r;
+				}
+			}
+
+			// rotate feeler about -30 degrees
+			s = sinf(3.14159f*-0.15f);
+			c = cosf(3.14159f*-0.15f);
+			if (rayCircleIntersection(	x, y,
+										velocity->x * c - velocity->y * s, velocity->x * s + velocity->y * c, // apply rotation to vector
+										obstacle.x, obstacle.y, obstacle.r,
+										ix, iy, &t)) {
+				if (t >= 0 &&
+					t <= m_feelerLength * 0.5f) { // scale feeler 50%
+					force.x += (ix - obstacle.x) / obstacle.r;
+					force.y += (iy - obstacle.y) / obstacle.r;
+				}
+			}
+
 		}
 	}
 
@@ -235,5 +289,8 @@ Force ObstacleAvoidanceForce::getForce(GameObject* gameObject) const {
 		force.y /= magSqr;
 	}
 
-	return{ force.x * gameObject->getMaxForce(), force.y * gameObject->getMaxForce() };
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return{ force.x * maxForce, force.y * maxForce };
 }

@@ -6,6 +6,13 @@ struct Force {
 	float x, y;
 };
 
+struct WanderData {
+	float offset;
+	float radius;
+	float jitter;
+	float x, y;
+};
+
 // abstract class
 class SteeringForce {
 public:
@@ -53,7 +60,7 @@ public:
 			force.y += temp.y * wf.weight;
 		}
 
-		gameObject->addForce(force.x * deltaTime, force.y * deltaTime);
+//		gameObject->addForce(force.x * deltaTime, force.y * deltaTime);
 		return true;
 	}
 	
@@ -92,7 +99,26 @@ public:
 			force.y += temp.y * wf.weight;
 		}
 
-		gameObject->addForce(force.x * deltaTime, force.y * deltaTime);
+//		gameObject->addForce(force.x * deltaTime, force.y * deltaTime);
+
+		float maxVelocity = 0;
+		gameObject->getBlackboard().get("maxVelocity", maxVelocity);
+		
+		Vector2* velocity = nullptr;
+		gameObject->getBlackboard().get("velocity", &velocity);
+
+		velocity->x += force.x * deltaTime;
+		velocity->y += force.y * deltaTime;
+		
+		// ensure velocity is not above maximum velocity
+		float magnitudeSqr = velocity->x * velocity->x + velocity->y * velocity->y;
+		if (magnitudeSqr > (maxVelocity * maxVelocity)) {
+			float magnitude = sqrt(magnitudeSqr);
+			velocity->x = velocity->x / magnitude * maxVelocity;
+			velocity->y = velocity->y / magnitude * maxVelocity;
+		}
+
+		gameObject->translate(velocity->x * deltaTime, velocity->y * deltaTime);
 	}
 
 protected:

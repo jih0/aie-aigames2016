@@ -33,6 +33,9 @@
     <ClCompile Include="..\aiToolkit\KeyboardBehaviour.cpp">
       <Filter>AIToolkit</Filter>
     </ClCompile>
+    <ClCompile Include="..\aiToolkit\Blackboard.cpp">
+      <Filter>AIToolkit</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="week1_AgentsApp.h">
@@ -48,6 +51,9 @@
       <Filter>AIToolkit</Filter>
     </ClInclude>
     <ClInclude Include="..\aiToolkit\KeyboardBehaviour.h">
+      <Filter>AIToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="..\aiToolkit\Blackboard.h">
       <Filter>AIToolkit</Filter>
     </ClInclude>
   </ItemGroup>

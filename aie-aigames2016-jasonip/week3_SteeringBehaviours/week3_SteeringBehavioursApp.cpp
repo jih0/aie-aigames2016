@@ -62,10 +62,21 @@ bool week3_SteeringBehavioursApp::startup() {
 		
 		enemy.addBehaviour(&m_fsm[i++]);
 
-		enemy.setMaxForce(300);
-		enemy.setMaxVelocity(150);
+		Vector2* v = new Vector2();
+		v->x = 0;
+		v->y = 0;
 
-		enemy.setWanderData(100, 75, 25);
+		WanderData* wd = new WanderData();
+		wd->offset = 100;
+		wd->radius = 75;
+		wd->jitter = 25;
+		wd->x = 0;
+		wd->y = 0;
+
+		enemy.getBlackboard().set("velocity", v, true);
+		enemy.getBlackboard().set("maxForce", 300.f);
+		enemy.getBlackboard().set("maxVelocity", 150.f);
+		enemy.getBlackboard().set("wanderData", wd, true);
 
 		enemy.setPosition(	float(rand() % getWindowWidth()), 
 							float(rand() % getWindowHeight()));
@@ -94,7 +105,12 @@ void week3_SteeringBehavioursApp::shutdown() {
 
 void week3_SteeringBehavioursApp::update(float deltaTime) {
 
+	// game objects ask questions
+	// game objects respond to questions
+	// run arbitration
+
 	m_player.update(deltaTime);
+
 	for (auto& enemy : m_enemies) {
 		enemy.update(deltaTime);
 	}
@@ -155,20 +171,6 @@ void week3_SteeringBehavioursApp::draw() {
 
 		screenWrap(x, y);
 		enemy.setPosition(x, y);
-
-		enemy.getVelocity(&vx, &vy);
-
-		float magSqr = vx * vx + vy * vy;
-		if (magSqr > 0) {
-			magSqr = sqrt(magSqr);
-			vx /= magSqr;
-			vy /= magSqr;
-
-			vx *= 50;
-			vy *= 50;
-			m_2dRenderer->setRenderColour(1, 1, 0);
-			m_2dRenderer->drawLine(x, y, x + vx, y + vy);
-		}
 	}
 	
 	float ix, iy;
@@ -188,25 +190,6 @@ void week3_SteeringBehavioursApp::draw() {
 		m_2dRenderer->setRenderColour(1, 0, 1);
 		m_2dRenderer->drawCircle(circle.x, circle.y, circle.r);
 	}
-
-	//float radius = m_enemy.getWanderRadius();
-	//float offset = m_enemy.getWanderOffset();
-
-	//float vx = 0, vy = 0;
-	//m_enemy.getVelocity(&vx, &vy);
-	//
-	//float dist = sqrt(vx * vx + vy * vy);
-	//vx /= dist;
-	//vy /= dist;
-
-	//float wanderX = 0, wanderY = 0;
-	//m_enemy.getWanderTarget(&wanderX, &wanderY);
-
-	//m_2dRenderer->setRenderColour(0, 1, 0, 0.25f);
-	//m_2dRenderer->drawCircle(x, y, radius);
-
-	//m_2dRenderer->setRenderColour(1, 0, 1);
-	//m_2dRenderer->drawCircle(x + vx * offset + wanderX, y + vy * offset + wanderY, 10);
 
 	// draw some text
 	m_2dRenderer->setRenderColour(1, 1, 0);
