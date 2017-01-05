@@ -1,10 +1,9 @@
 #include "Blackboard.h"
 
 void Blackboard::clearData() {
-	for (auto data : m_data) {
+	for (auto data : m_data)
 		if (data.second.type == eBlackboardDataType::OWNEDPOINTER)
 			delete data.second.p;
-	}
 
 	m_data.clear();
 }
@@ -173,6 +172,10 @@ bool Blackboard::get(const std::string& name, float& value) {
 	return true;
 }
 
+void BlackboardQuestion::clearExperts() {
+	m_experts.clear();
+}
+
 bool BlackboardQuestion::arbitrate(Blackboard* blackboard) {
 	
 	BlackboardExpert* bestExpert = nullptr;
@@ -189,7 +192,7 @@ bool BlackboardQuestion::arbitrate(Blackboard* blackboard) {
 	}
 
 	if (bestExpert != nullptr) {
-		bestExpert->evaluateResponse(this, blackboard);
+		bestExpert->execute(this, blackboard);
 	}
 
 	return bestExpert != nullptr;
@@ -204,7 +207,7 @@ void Blackboard::runArbitration() {
 			remove.push_back(question);
 	}
 
-	for (auto question : m_questions) {
+	for (auto question : remove) {
 		m_questions.remove(question);
 	}
 }

@@ -34,7 +34,9 @@ class BlackboardQuestion {
 public:
 
 	BlackboardQuestion(int id) : m_id(id) {};
-	virtual ~BlackboardQuestion() {}
+	virtual ~BlackboardQuestion() { clearExperts(); }
+
+	void clearExperts();
 
 	int getType() const { return m_id; }
 

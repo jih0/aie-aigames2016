@@ -12,6 +12,33 @@ public:
 	MyNode() {}
 	virtual ~MyNode() {}
 
+	static float heuristicManhattan(Node* a, Node* b) {
+		MyNode* s = (MyNode*)a;
+		MyNode* e = (MyNode*)b;
+
+		return (e->x - s->x) + (e->y - s->y);
+	}
+
+	static float heuristicDistanceSqr(Node* a, Node* b) {
+		MyNode* s = (MyNode*)a;
+		MyNode* e = (MyNode*)b;
+
+		float x = e->x - s->x;
+		float y = e->y - s->y;
+		
+		return (x * x) + (y * y);
+	}
+
+	static float heuristicDistance(Node* a, Node* b) {
+		MyNode* s = (MyNode*)a;
+		MyNode* e = (MyNode*)b;
+
+		float x = e->x - s->x;
+		float y = e->y - s->y;
+
+		return sqrtf((x * x) + (y * y));
+	}
+
 	float x, y;
 };
 

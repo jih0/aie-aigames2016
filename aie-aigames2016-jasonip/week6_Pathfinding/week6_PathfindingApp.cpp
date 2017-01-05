@@ -50,18 +50,26 @@ bool week6_PathfindingApp::startup() {
 		}
 	}
 
+	// place random medkits
 	for (int i = 0; i < 5; ++i) {
 		MyNode* node = m_nodes[rand() % m_nodes.size()];
 		node->flags |= Pathfinding::Node::MEDKIT;
 	}
 
+	// example of a lambda object: identical to heuristicManhattan
+	// square brackets represent that it's a lambda function
+	auto myFunc = [](Pathfinding::Node* a, Pathfinding::Node* b) -> float{
+		MyNode* s = (MyNode*)a;
+		MyNode* e = (MyNode*)b;
+		return (e->x - s->x) + (e->y - s->y);
+	};
+
 	// perform search
 	m_start = m_nodes[rand() % m_nodes.size()];
 	m_end = m_nodes[rand() % m_nodes.size()];
-	//m_end = nullptr;
 	
-	Pathfinding::Search::dijkstra(m_start, m_end, m_path);
-	//Pathfinding::Search::dijkstraFindFlags(m_start, Pathfinding::Node::MEDKIT, m_path);
+	//Pathfinding::Search::dijkstra(m_start, m_end, m_path);
+	Pathfinding::Search::aStar(m_start, m_end, m_path, myFunc);
 
 	m_player.getBlackboard().set("path", &m_path);
 	m_player.getBlackboard().set("speed", 50.0f);
@@ -199,7 +207,7 @@ bool PathBehaviour::execute(GameObject* gameObject, float deltaTime) {
 			do {
 				auto end = (*nodes)[rand() % nodes->size()];
 
-				found = Pathfinding::Search::dijkstra(first, end, *path);
+				found = Pathfinding::Search::aStar(first, end, *path, MyNode::heuristicDistanceSqr);
 			} while (found == false);
 		}
 	}
