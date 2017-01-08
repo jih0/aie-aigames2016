@@ -11,6 +11,7 @@ struct WanderData {
 	float radius;
 	float jitter;
 	float x, y;
+	float timer;
 };
 
 // abstract class
@@ -30,7 +31,8 @@ struct WeightedForce {
 	float weight;
 };
 
-// steering behaviour
+// steering 
+
 class SteeringBehaviour : public Behaviour {
 public:
 
@@ -61,6 +63,26 @@ public:
 		}
 
 //		gameObject->addForce(force.x * deltaTime, force.y * deltaTime);
+
+		float maxVelocity = 0;
+		gameObject->getBlackboard().get("maxVelocity", maxVelocity);
+
+		Vector2* velocity = nullptr;
+		gameObject->getBlackboard().get("velocity", &velocity);
+
+		velocity->x += force.x * deltaTime;
+		velocity->y += force.y * deltaTime;
+
+		// ensure velocity is not above maximum velocity
+		float magnitudeSqr = velocity->x * velocity->x + velocity->y * velocity->y;
+		if (magnitudeSqr > (maxVelocity * maxVelocity)) {
+			float magnitude = sqrt(magnitudeSqr);
+			velocity->x = velocity->x / magnitude * maxVelocity;
+			velocity->y = velocity->y / magnitude * maxVelocity;
+		}
+
+		gameObject->translate(velocity->x * deltaTime, velocity->y * deltaTime);
+
 		return true;
 	}
 	
@@ -124,6 +146,21 @@ public:
 protected:
 
 	std::vector<WeightedForce>	m_forces;
+};
+
+class IdleForce : public SteeringForce {
+public:
+
+	IdleForce(GameObject* target = nullptr) : m_target(nullptr) {}
+	virtual ~IdleForce() {}
+
+	void setTarget(GameObject* target) { m_target = target; };
+
+	virtual Force getForce(GameObject* gameObject) const;
+
+protected:
+
+	GameObject* m_target;
 };
 
 class SeekForce : public SteeringForce {
@@ -199,6 +236,11 @@ public:
 // circle obstacles struct
 struct Obstacle {
 	float x, y, r;
+	float w, h;
+	enum {
+		SPHERE,
+		BOX
+	} type;
 };
 
 class ObstacleAvoidanceForce : public SteeringForce {
@@ -209,8 +251,19 @@ public:
 
 	void setFeelerLength(float length) { m_feelerLength = length; }
 
-	void addObstacle(float x, float y, float r) {
-		m_obstacles.push_back({ x, y, r });
+	//void addObstacle(float x, float y, float r ) {
+	//	m_obstacles.push_back({ x, y, r });
+	//}
+
+	// added 
+	void addObstacle(float x, float y, float r, float w, float h) {
+		if (w == 0 &&
+			h == 0) {
+			m_obstacles.push_back({ x, y, r, w, h, Obstacle::SPHERE });
+		}
+		else {
+			m_obstacles.push_back({ x, y, r, w, h, Obstacle::BOX });
+		}
 	}
 
 	void clearObstacles() { m_obstacles.clear(); }
@@ -221,4 +274,57 @@ protected:
 
 	float					m_feelerLength;
 	std::vector<Obstacle>	m_obstacles;
+};
+
+// Flocking Forces
+
+class SeperationForce : public SteeringForce {
+public:
+
+	SeperationForce() {}
+	virtual ~SeperationForce() {}
+
+	void setEntities(std::vector<GameObject>* entities) { m_entities = entities; }
+	void setRadius(float radius) { m_radius = radius; }
+
+	virtual Force getForce(GameObject* gameObject) const;
+
+protected:
+
+	std::vector<GameObject>*	m_entities;
+	float						m_radius;
+};
+
+class CohesionForce: public SteeringForce {
+public:
+
+	CohesionForce() {}
+	virtual ~CohesionForce() {}
+
+	void setEntities(std::vector<GameObject>* entities) { m_entities = entities; }
+	void setRadius(float radius) { m_radius = radius; }
+
+	virtual Force getForce(GameObject* gameObject) const;
+
+protected:
+
+	std::vector<GameObject>*	m_entities;
+	float						m_radius;
+};
+
+class AlignmentForce : public SteeringForce {
+public:
+
+	AlignmentForce() {}
+	virtual ~AlignmentForce() {}
+
+	void setEntities(std::vector<GameObject>* entities) { m_entities = entities; }
+	void setRadius(float radius) { m_radius = radius; }
+
+	virtual Force getForce(GameObject* gameObject) const;
+
+protected:
+
+	std::vector<GameObject>*	m_entities;
+	float						m_radius;
 };

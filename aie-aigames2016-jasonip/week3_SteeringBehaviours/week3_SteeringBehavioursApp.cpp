@@ -4,6 +4,7 @@
 #include "Input.h"
 
 #include "aiUtilities.h"
+#include <ctime>
 
 week3_SteeringBehavioursApp::week3_SteeringBehavioursApp() {
 
@@ -15,6 +16,13 @@ week3_SteeringBehavioursApp::~week3_SteeringBehavioursApp() {
 
 bool week3_SteeringBehavioursApp::startup() {
 	
+	time_t rawtime;
+	struct tm* timeinfo;
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	unsigned int seed = (unsigned int)timeinfo->tm_sec;
+
 	m_2dRenderer = new aie::Renderer2D();
 
 	m_font = new aie::Font("./font/consolas.ttf", 32);
@@ -83,7 +91,8 @@ bool week3_SteeringBehavioursApp::startup() {
 	}
 
 	// set up obstacles
-	for (int i = 0; i < 10; ++i)
+	srand(seed);
+	for (int i = 0; i < 3; ++i)
 	{
 		Circle c;
 		c.x = rand() % (getWindowWidth() - 100) + 50.f;
@@ -91,7 +100,7 @@ bool week3_SteeringBehavioursApp::startup() {
 		c.r = rand() % 40 + 40.f;
 
 		m_obstacles.push_back(c);
-		m_avoid.addObstacle(c.x, c.y, c.r);
+		m_avoid.addObstacle(c.x, c.y, c.r, 0, 0);
 	}
 
 	return true;
@@ -161,7 +170,7 @@ void week3_SteeringBehavioursApp::draw() {
 	screenWrap(x, y);
 	m_player.setPosition(x, y);
 
-	float vx, vy;
+//	float vx, vy;
 
 	// draw the enemy as a red circle
 	for (auto& enemy : m_enemies) {

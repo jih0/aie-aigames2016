@@ -5,6 +5,7 @@
 #include "Pathfinding.h"
 #include "GameObject.h"
 #include "Behaviour.h"
+#include "Texture.h"
 
 class MyNode : public Pathfinding::Node {
 public:
@@ -78,4 +79,8 @@ protected:
 
 	GameObject m_player;
 	PathBehaviour m_pathBehaviour;
+
+	aie::Texture	m_map;
+	aie::Texture	m_spriteSheet;
+	aie::Texture	m_charSpriteSheet;
 };

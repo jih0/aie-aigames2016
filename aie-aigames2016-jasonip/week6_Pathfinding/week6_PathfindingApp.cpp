@@ -17,19 +17,54 @@ bool week6_PathfindingApp::startup() {
 
 	m_font = new aie::Font("./font/consolas.ttf", 32);
 
-	// create nodes
-	for (int x = 0; x < 50; ++x) {
-		for (int y = 0; y < 25; ++y) {
+	m_spriteSheet.load("./textures/roguelikeSheet_transparent.png");
+	m_charSpriteSheet.load("./textures/roguelikeChar_transparent.png");
+	m_map.load("./map/map1.png");
 
-			if (rand() % 100 < 40) continue;
+	auto pixels = m_map.getPixels();
+	auto channels = m_map.getFormat();
+
+	// create nodes, using map1.png
+	for (int x = 0; x < m_map.getWidth(); ++x) {
+		for (int y = 0; y < m_map.getHeight(); ++y) {
+			
+			int index = (y * m_map.getWidth() + x) * channels;
+
+			if (pixels[index+0] == 0 &&
+				pixels[index+1] == 0 &&
+				pixels[index+2] == 0) continue; // ignore it if the pixel is black
+			
+			if (pixels[index + 0] == 0 &&
+				pixels[index + 1] == 0 &&
+				pixels[index + 2] == 255) continue; // ignore it if the pixel is blue
+
+			if (pixels[index + 0] == 255 &&
+				pixels[index + 1] == 0 &&
+				pixels[index + 2] == 255) continue; // ignore it if the pixel is pink
+									  
+			//if (rand() % 100 < 40) continue;
 
 			MyNode* node = new MyNode();
-			node->x = float(x * 20 + 100); // 20 pixel seperation starting 100 pixels in
-			node->y = float(y * 20 + 100);
+			node->x = float(x * 20 + 10); // 20 pixel seperation starting 100 pixels in
+			node->y = getWindowHeight() - float(y * 20 + 10);
 
 			m_nodes.push_back(node);
 		}
 	}
+
+	// create nodes, using rand() function
+	//for (int x = 0; x < 50; ++x) {
+	//	for (int y = 0; y < 25; ++y) {
+
+	//		if (rand() % 100 < 40) continue;
+
+	//		MyNode* node = new MyNode();
+	//		node->x = float(x * 20 + 100); // 20 pixel seperation starting 100 pixels in
+	//		node->y = float(y * 20 + 100);
+
+	//		m_nodes.push_back(node);
+	//	}
+	//}
 
 	// create edges/links
 	for (auto a : m_nodes) {
@@ -97,15 +132,14 @@ void week6_PathfindingApp::update(float deltaTime) {
 	// input example
 	aie::Input* input = aie::Input::getInstance();
 
-	if (input->wasKeyPressed(aie::INPUT_KEY_F5)) {
+	if (input->wasKeyPressed(aie::INPUT_KEY_D)) {
 		m_start = m_nodes[rand() % m_nodes.size()];
 		m_end = m_nodes[rand() % m_nodes.size()];
 
 		Pathfinding::Search::dijkstra(m_start, m_end, m_path);
 		//Pathfinding::Search::dijkstraFindFlags(m_start, Pathfinding::Node::MEDKIT, m_path);
-
 	}
-	
+
 	// exit the application
 	if (input->isKeyDown(aie::INPUT_KEY_ESCAPE))
 		quit();
@@ -119,12 +153,79 @@ void week6_PathfindingApp::draw() {
 	// begin drawing sprites
 	m_2dRenderer->begin();
 
-	m_2dRenderer->setRenderColour(1, 1, 0);
+	// draw map
+	auto pixels = m_map.getPixels();
+	auto channels = m_map.getFormat();
+
+	for (int x = 0; x < m_map.getWidth(); ++x) {
+		for (int y = 0; y < m_map.getHeight(); ++y) {
+
+			// sprite offsets for spriteSheet 
+			float pw = 1.0f / m_spriteSheet.getWidth();
+			float ph = 1.0f / m_spriteSheet.getHeight();
+			float w = pw * 16.0f;
+			float h = ph * 16.0f;
+
+			int index = (y * m_map.getWidth() + x) * channels;
+
+			if (pixels[index + 0] == 0 &&
+				pixels[index + 1] == 0 &&
+				pixels[index + 2] == 0) {
+
+				// draw black thing
+				m_2dRenderer->setRenderColour(1, 1, 1);
+				m_2dRenderer->setUVRect((5 * w + 5 * pw), 0, w, h);
+			}
+			else if (pixels[index + 0] == 255 &&
+				pixels[index + 1] == 255 &&
+				pixels[index + 2] == 255) {
+
+				// draw light brown thing
+				m_2dRenderer->setRenderColour(1, 1, 1);
+				m_2dRenderer->setUVRect(((5 * w + 5 * pw)), (2 * h + 2 * ph), w, h);
+			}
+
+			float posX = float(x * 20 + 10); // 20 pixel seperation starting 10 pixels in
+			float posY = getWindowHeight() - float(y * 20 + 10);
+			
+			m_2dRenderer->drawSprite(&m_spriteSheet, // reference to texture, passing nullptr draws a square
+				posX, posY,
+				20, 20, // width, height
+				0, // rotation
+				10 // depth
+			);
+		}
+	}
+
+	// sprite offsets for charSpriteSheet 
+	float pw = 1.0f / m_charSpriteSheet.getWidth();
+	float ph = 1.0f / m_charSpriteSheet.getHeight();
+	float w = pw * 16.0f;
+	float h = ph * 16.0f;
+
+	//draw character
+	m_2dRenderer->setRenderColour(1, 1, 1);
 	float x, y;
 	m_player.getPosition(&x, &y);
-	m_2dRenderer->drawCircle(x, y, 15);
+	//m_2dRenderer->drawCircle(x, y, 5);
+	m_2dRenderer->setUVRect((0 * w + 0 * pw), (11 * h + 11 * ph), w, h);
+	m_2dRenderer->drawSprite(&m_charSpriteSheet, // reference to texture, passing nullptr draws a square
+		x, y,
+		20, 20, // width, height
+		0, // rotation
+		8 // depth
+	);
 
-	for (auto node : m_nodes) {
+/*	// draw character weapon, maybe only when in attackState?
+	m_2dRenderer->setUVRect((46 * w + 46 * pw), (7 * h + 7 * ph), w, h);
+	m_2dRenderer->drawSprite(&m_charSpriteSheet, // reference to texture, passing nullptr draws a square
+		x, y,
+		20, 20, // width, height
+		0, // rotation
+		7 // depth
+	); */
+
+/*	for (auto node : m_nodes) {
 
 		if (node == m_start) {
 			m_2dRenderer->setRenderColour(0, 1, 0);
@@ -150,6 +251,7 @@ void week6_PathfindingApp::draw() {
 
 	}
 
+	// draw path
 	m_2dRenderer->setRenderColour(0, 1, 1);
 	for (auto node : m_path) {
 
@@ -159,8 +261,16 @@ void week6_PathfindingApp::draw() {
 		if (e != nullptr) {
 			m_2dRenderer->drawLine(s->x, s->y, e->x, e->y, 3, 0);
 		}
-	}
+	} */
 
+	//m_2dRenderer->setRenderColour(1, 1, 1);
+	//m_2dRenderer->drawSprite(nullptr, // reference to texture, passing nullptr draws a square
+	//	getWindowWidth() * 0.50f, getWindowHeight() * 0.5f,
+	//	1280, 720, // width, height
+	//	0, // rotation
+	//	10 // depth
+	//);
+	
 	//output some text
 	m_2dRenderer->drawText(m_font, "Press ESC to quit!", 0, 0);
 
@@ -211,7 +321,5 @@ bool PathBehaviour::execute(GameObject* gameObject, float deltaTime) {
 			} while (found == false);
 		}
 	}
-
-
-
+	return true;
 }

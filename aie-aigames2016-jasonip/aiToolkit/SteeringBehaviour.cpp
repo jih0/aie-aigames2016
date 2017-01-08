@@ -4,6 +4,46 @@
 
 #include <glm/ext.hpp>
 
+Force IdleForce::getForce(GameObject* gameObject) const {
+	
+	// get target position
+	float tx = 0, ty = 0;
+	m_target->getPosition(&tx, &ty);
+
+	// get target velocity
+	Vector2* velocity = nullptr;
+	gameObject->getBlackboard().get("velocity", &velocity);
+
+	// add velocity to target
+	tx -= velocity->x;
+	ty -= velocity->y;
+
+	// get my position
+	float x = 0, y = 0;
+	gameObject->getPosition(&x, &y);
+
+	// get a vector to the target from "us"
+	float xDiff = tx - x;
+	float yDiff = ty - y;
+	float distance = (xDiff * xDiff + yDiff * yDiff);
+
+	// if not at the target then move towards them
+	if (distance > 0) {
+
+		distance = sqrt(distance);
+
+		// need to make the difference the length of 1 (normalize)
+		// this is so movement can be "pixels per second"
+		xDiff /= distance;
+		yDiff /= distance;
+	}
+
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return{ xDiff * maxForce, yDiff * maxForce };
+}
+
 Force SeekForce::getForce(GameObject* gameObject) const {
 
 	// get target position
@@ -218,14 +258,13 @@ Force WanderForce::getForce(GameObject* gameObject) const {
 
 Force ObstacleAvoidanceForce::getForce(GameObject* gameObject) const {
 
-	Force force = {};
+	Force force = { 0, 0 };
 
 	// create feeler
 	float x, y;
 	gameObject->getPosition(&x, &y);
 	Vector2* velocity = nullptr;
 	gameObject->getBlackboard().get("velocity", &velocity);
-
 
 	float ix, iy, t;
 
@@ -235,58 +274,251 @@ Force ObstacleAvoidanceForce::getForce(GameObject* gameObject) const {
 
 		// loop through all obstacles and find collisions
 		for (auto& obstacle : m_obstacles) {
-			if (rayCircleIntersection(	x, y,
-										velocity->x, velocity->y,
-										obstacle.x, obstacle.y, obstacle.r,
-										ix, iy,
-										&t)) {
-				// is the collision within range? where t is the distance to collision
-				if (t >= 0 &&
-					t <= m_feelerLength) {
 
-					// get direction vector and make it a unit vector by dividing by the circle obstacle's radius
-					force.x += (ix - obstacle.x) / obstacle.r;
-					force.y += (iy - obstacle.y) / obstacle.r;
+			if (obstacle.type == Obstacle::SPHERE) {
+				if (rayCircleIntersection(x, y,
+					velocity->x, velocity->y,
+					obstacle.x, obstacle.y, obstacle.r,
+					ix, iy, &t)) {
+					// within range?
+					if (t >= 0 &&
+						t <= m_feelerLength) {
+						force.x += (ix - obstacle.x) / obstacle.r;
+						force.y += (iy - obstacle.y) / obstacle.r;
+					}
+				}
+
+				// rotate feeler about 30 degrees
+				float s = sinf(3.14159f*0.15f);
+				float c = cosf(3.14159f*0.15f);
+				if (rayCircleIntersection(x, y,
+					velocity->x * c - velocity->y * s, velocity->x * s + velocity->y * c, // apply rotation to vector
+					obstacle.x, obstacle.y, obstacle.r,
+					ix, iy, &t)) {
+					if (t >= 0 &&
+						t <= (m_feelerLength * 0.5f)) { // scale feeler 50%
+						force.x += (ix - obstacle.x) / obstacle.r;
+						force.y += (iy - obstacle.y) / obstacle.r;
+					}
+				}
+
+				// rotate feeler about -30 degrees
+				s = sinf(3.14159f*-0.15f);
+				c = cosf(3.14159f*-0.15f);
+				if (rayCircleIntersection(x, y,
+					velocity->x * c - velocity->y * s, velocity->x * s + velocity->y * c, // apply rotation to vector
+					obstacle.x, obstacle.y, obstacle.r,
+					ix, iy, &t)) {
+					if (t >= 0 &&
+						t <= (m_feelerLength * 0.5f)) { // scale feeler 50%
+						force.x += (ix - obstacle.x) / obstacle.r;
+						force.y += (iy - obstacle.y) / obstacle.r;
+					}
 				}
 			}
+			else if (obstacle.type == Obstacle::BOX) {
+				float nx = 0, ny = 0;
 
-			// rotate feeler about 30 degrees
-			float s = sinf(3.14159f*0.15f);
-			float c = cosf(3.14159f*0.15f);
-			if (rayCircleIntersection(	x, y,
-										velocity->x * c - velocity->y * s, velocity->x * s + velocity->y * c, // apply rotation to vector
-										obstacle.x, obstacle.y, obstacle.r,
-										ix, iy, &t)) {
-				if (t >= 0 &&
-					t <= m_feelerLength * 0.5f) { // scale feeler 50%
-					force.x += (ix - obstacle.x) / obstacle.r;
-					force.y += (iy - obstacle.y) / obstacle.r;
+				float mag = sqrt(magSqr);
+
+				if (rayBoxIntersection(x, y,
+					velocity->x / mag * m_feelerLength, velocity->y / mag * m_feelerLength,
+					obstacle.x - obstacle.w * 0.5f, obstacle.y - obstacle.h * 0.5f, obstacle.w, obstacle.h,
+					nx, ny,
+					&t)) {
+					force.x += nx;
+					force.y += ny;
+				}
+
+				// rotate feeler about 30 degrees
+				float s = sinf(3.14159f*0.15f);
+				float c = cosf(3.14159f*0.15f);
+				if (rayBoxIntersection(x, y,
+					(velocity->x * c - velocity->y * s) / mag * m_feelerLength * 0.5f,
+					(velocity->x * s + velocity->y * c) / mag * m_feelerLength * 0.5f,
+					obstacle.x - obstacle.w * 0.5f, obstacle.y - obstacle.h * 0.5f, obstacle.w, obstacle.h,
+					nx, ny,
+					&t)) {
+					force.x += nx;
+					force.y += ny;
+				}
+				// rotate feeler about 30 degrees
+				s = sinf(3.14159f*-0.15f);
+				c = cosf(3.14159f*-0.15f);
+				if (rayBoxIntersection(x, y,
+					(velocity->x * c - velocity->y * s) / mag * m_feelerLength * 0.5f,
+					(velocity->x * s + velocity->y * c) / mag * m_feelerLength * 0.5f,
+					obstacle.x - obstacle.w * 0.5f, obstacle.y - obstacle.h * 0.5f, obstacle.w, obstacle.h,
+					nx, ny,
+					&t)) {
+					force.x += nx;
+					force.y += ny;
 				}
 			}
+		} 
+	}
 
-			// rotate feeler about -30 degrees
-			s = sinf(3.14159f*-0.15f);
-			c = cosf(3.14159f*-0.15f);
-			if (rayCircleIntersection(	x, y,
-										velocity->x * c - velocity->y * s, velocity->x * s + velocity->y * c, // apply rotation to vector
-										obstacle.x, obstacle.y, obstacle.r,
-										ix, iy, &t)) {
-				if (t >= 0 &&
-					t <= m_feelerLength * 0.5f) { // scale feeler 50%
-					force.x += (ix - obstacle.x) / obstacle.r;
-					force.y += (iy - obstacle.y) / obstacle.r;
-				}
-			}
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
 
+	return{ force.x * maxForce, force.y * maxForce };
+}
+
+Force SeperationForce::getForce(GameObject* gameObject) const {
+
+	// get my position
+	float x = 0, y = 0;
+	gameObject->getPosition(&x, &y);
+
+	Force force = {};
+	int neighbours = 0;
+
+	for (auto& entity : *m_entities) {
+		if (gameObject == &entity) continue;
+
+		// get target position
+		float tx = 0, ty = 0;
+		entity.getPosition(&tx, &ty);
+
+		// get a vector from "us" to the target
+		float xDiff = x - tx;
+		float yDiff = y - ty;
+		float distanceSqr = (xDiff * xDiff + yDiff * yDiff);
+
+		// is it within the radius?
+		if (distanceSqr > 0 &&
+			distanceSqr < (m_radius * m_radius)) {
+
+			// push away from entity
+			distanceSqr = sqrt(distanceSqr);
+
+			// need to make the difference the length of 1 (normalize)
+			// this is so movement can be "pixels per second"
+			xDiff /= distanceSqr;
+			yDiff /= distanceSqr;
+
+			neighbours++;
+			force.x += xDiff;
+			force.y += yDiff;
+		}
+	}
+	
+	if (neighbours > 0) {
+		
+		force.x /= neighbours;
+		force.y /= neighbours;
+	}
+
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return{ force.x * maxForce, force.y * maxForce };
+}
+
+Force CohesionForce::getForce(GameObject * gameObject) const
+{
+	// get my position
+	float x = 0, y = 0;
+	gameObject->getPosition(&x, &y);
+
+	Force force = {};
+	int neighbours = 0;
+
+	for (auto& entity : *m_entities) {
+		if (gameObject == &entity) continue;
+
+		// get target position
+		float tx = 0, ty = 0;
+		entity.getPosition(&tx, &ty);
+
+		// get a vector from "us" to the target
+		float xDiff = x - tx;
+		float yDiff = y - ty;
+		float distanceSqr = (xDiff * xDiff + yDiff * yDiff);
+
+		// is it within the radius?
+		if (distanceSqr > 0 &&
+			distanceSqr < (m_radius * m_radius)) {
+
+			neighbours++;
+			force.x += tx;
+			force.y += ty;
 		}
 	}
 
-	// normalise force
-	magSqr = force.x * force.x + force.y * force.y;
-	if (magSqr > 0) {
-		magSqr = sqrt(magSqr);
-		force.x /= magSqr;
-		force.y /= magSqr;
+	if (neighbours > 0) {
+
+		force.x = force.x / neighbours - x;
+		force.y = force.y / neighbours - y;
+
+		float d = force.x * force.x + force.y * force.y;
+		if (d > 0) {
+			d = sqrt(d);
+			force.x /= d;
+			force.y /= d;
+		}
+	}
+
+	float maxForce = 0;
+	gameObject->getBlackboard().get("maxForce", maxForce);
+
+	return{ force.x * maxForce, force.y * maxForce };
+}
+
+Force AlignmentForce::getForce(GameObject * gameObject) const
+{
+	// get my position
+	float x = 0, y = 0;
+	gameObject->getPosition(&x, &y);
+
+	Force force = {};
+	int neighbours = 0;
+
+	for (auto& entity : *m_entities) {
+		if (gameObject == &entity) continue;
+
+		// get target position
+		float tx = 0, ty = 0;
+		entity.getPosition(&tx, &ty);
+
+		// get a vector from "us" to the target
+		float xDiff = x - tx;
+		float yDiff = y - ty;
+		float distanceSqr = (xDiff * xDiff + yDiff * yDiff);
+
+		// is it within the radius?
+		if (distanceSqr > 0 &&
+			distanceSqr < (m_radius * m_radius)) {
+			
+			Vector2* v = nullptr;
+			entity.getBlackboard().get("velocity", &v);
+
+			distanceSqr = v->x * v->x + v->y * v->y;
+			if (distanceSqr > 0) {
+				distanceSqr = sqrt(distanceSqr);
+				
+				neighbours++;
+				force.x += v->x;
+				force.y += v->y;
+			}
+		}
+	}
+
+	if (neighbours > 0) {
+
+		Vector2* v = nullptr;
+		gameObject->getBlackboard().get("velocity", &v);
+
+		force.x = force.x / neighbours - v->x;
+		force.y = force.y / neighbours - v->y;
+
+		// normalise direction
+		float d = force.x * force.x + force.y * force.y;
+		if (d > 0) {
+			d = sqrt(d);
+			force.x /= d;
+			force.y /= d;
+		}
 	}
 
 	float maxForce = 0;
