@@ -54,6 +54,17 @@ public:
 	std::vector<MyNode*>* nodes;
 };
 
+//class PathState : public State {
+//public:
+//
+//	PathState() {}
+//	virtual ~PathState() {}
+//
+//	virtual bool execute(GameObject* gameObject, float deltaTime);
+//
+//	std::vector<MyNode*>* nodes;
+//};
+
 class week6_PathfindingApp : public aie::Application {
 public:
 

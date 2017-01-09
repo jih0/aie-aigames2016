@@ -1,6 +1,7 @@
 #pragma once
 
 #include "State.h"
+#include "Pathfinding.h"
 
 struct Force {
 	float x, y;
@@ -29,6 +30,42 @@ public:
 struct WeightedForce {
 	SteeringForce* force;
 	float weight;
+};
+
+class MyNode : public Pathfinding::Node {
+public:
+
+	MyNode() {}
+	virtual ~MyNode() {}
+
+	static float heuristicManhattan(Node* a, Node* b) {
+		MyNode* s = (MyNode*)a;
+		MyNode* e = (MyNode*)b;
+
+		return (e->x - s->x) + (e->y - s->y);
+	}
+
+	static float heuristicDistanceSqr(Node* a, Node* b) {
+		MyNode* s = (MyNode*)a;
+		MyNode* e = (MyNode*)b;
+
+		float x = e->x - s->x;
+		float y = e->y - s->y;
+
+		return (x * x) + (y * y);
+	}
+
+	static float heuristicDistance(Node* a, Node* b) {
+		MyNode* s = (MyNode*)a;
+		MyNode* e = (MyNode*)b;
+
+		float x = e->x - s->x;
+		float y = e->y - s->y;
+
+		return sqrtf((x * x) + (y * y));
+	}
+
+	float x, y;
 };
 
 // steering 
@@ -148,6 +185,29 @@ protected:
 	std::vector<WeightedForce>	m_forces;
 };
 
+class PathBehaviour : public Behaviour {
+public:
+
+	PathBehaviour() {}
+	virtual ~PathBehaviour() {}
+
+	virtual bool execute(GameObject* gameObject, float deltaTime);
+
+	std::vector<MyNode*>* nodes;
+};
+
+class PathState : public State {
+public:
+
+	PathState() {}
+	virtual ~PathState() {}
+
+	virtual void update(GameObject* gameObject, float deltaTime);
+
+	std::vector<MyNode*>* nodes;
+};
+
+
 class IdleForce : public SteeringForce {
 public:
 
@@ -169,13 +229,15 @@ public:
 	SeekForce(GameObject* target = nullptr) : m_target(nullptr) {}
 	virtual ~SeekForce() {}
 
-	void setTarget(GameObject* target) { m_target = target; };
+	void setTarget(GameObject* target) { m_target = target; }
+//	void setTarget(std::vector<GameObject>* vTarget) { m_targets = vTarget; }
 
 	virtual Force getForce(GameObject* gameObject) const;
 	
 protected:
 
-	GameObject* m_target;
+	GameObject*					m_target;
+//	std::vector<GameObject>*	m_targets;
 };
 
 class FleeForce : public SteeringForce {

@@ -7,8 +7,10 @@
 #include "Texture.h"
 
 #include "GameObject.h"
+#include "Behaviour.h"
 #include "SteeringBehaviour.h"
 #include "KeyboardBehaviour.h"
+#include "Pathfinding.h"
 
 #include <math.h>
 
@@ -37,21 +39,58 @@ protected:
 
 	float				m_timer;
 	float				m_detectRadius;
+	int					m_enemyNum;
+	int					m_soldierNum;
 
 	GameObject			m_player;
 	KeyboardBehaviour	m_keyboardBehaviour;
 
-	std::vector<GameObject>	m_enemies;
+	// soldiers
+	std::vector<GameObject>			m_soldiers;
+	std::vector<FiniteStateMachine>	m_soldierFSM;
+	PathBehaviour m_pathBehaviour;
+
+	std::vector<MyNode*>						m_nodes;
+	std::list<Pathfinding::Node*>				m_path;
+	std::vector<std::list<Pathfinding::Node*>>	m_pathVector;
+
+	SeekForce				m_sseek;
+
+	MyNode* m_start;
+	MyNode* m_end;
+
+
+
+	// zombies
+	std::vector<GameObject>			m_enemies;
 	std::vector<FiniteStateMachine>	m_enemyFSM;
 //	GameObject			m_enemies[10];
 //	FiniteStateMachine	m_fsm[50];
 //	FiniteStateMachine	m_zombieFSM;
 
-	SteeringBehaviour	m_steeringBehaviour;
-	WanderForce			m_wander;
-	SeekForce			m_seek;
-	IdleForce			m_idle;
-	CohesionForce		m_cohesion;
-	SeperationForce		m_seperation;
-	AlignmentForce		m_alignment;
+	SteeringBehaviour		m_steeringBehaviour;
+	WanderForce				m_wander;
+	SeekForce				m_seek;
+	IdleForce				m_idle;
+	CohesionForce			m_cohesion;
+	SeperationForce			m_seperation;
+	AlignmentForce			m_alignment;
+	ObstacleAvoidanceForce	m_avoid;
+
+
+
+
+
+	struct Box {
+		float x, y, w, h;
+	};
+
+	struct Circle {
+		float x, y, r;
+	};
+
+//	std::vector<Obstacle>	m_obstacles;
+	std::vector<Circle>	m_circleObstacles;
+	std::vector<Box>		m_boxObstacles;
+
 };

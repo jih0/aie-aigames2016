@@ -50,27 +50,38 @@ public:
 
 	WithinRangeCondition(const GameObject* target, float range)
 		: m_target(target), m_range(range) {}
+//	WithinRangeCondition(const std::vector<GameObject>* targets, float range) 
+//		: m_targets(targets), m_range(range) {}
 	virtual ~WithinRangeCondition() {}
 
 	virtual bool test(GameObject* gameObject) const {
-		// get target position
-		float tx = 0, ty = 0;
-		m_target->getPosition(&tx, &ty);
 
 		// get my position
 		float x = 0, y = 0;
 		gameObject->getPosition(&x, &y);
 
-		// compare the two and get the distance between them
-		float xDiff = tx - x;
-		float yDiff = ty - y;
-		float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
+//		for (auto& targets : *m_targets) {
+			// get target position
+			float tx = 0, ty = 0;
+			m_target->getPosition(&tx, &ty);
 
-		return distance <= m_range;
+			// compare the two and get the distance between them
+			float xDiff = tx - x;
+			float yDiff = ty - y;
+			float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
+
+			if (distance <= m_range) {
+				//gameObject->getBlackboard().set("target", &m_target, false);
+				return true;
+			}
+			else { return false; }
+//		}
+
 	}
-
+		
 private:
 
+	const std::vector<GameObject>* m_targets;
 	const GameObject* m_target;
 	float m_range;
 };

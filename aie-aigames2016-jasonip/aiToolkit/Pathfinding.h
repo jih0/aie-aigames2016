@@ -52,8 +52,6 @@ public:
 	static bool compareFScore(Node* a, Node* b) {
 		return a->fScore < b->fScore;
 	}
-
-
 };
 
 class Search {

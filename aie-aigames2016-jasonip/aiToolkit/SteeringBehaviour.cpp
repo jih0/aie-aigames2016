@@ -46,6 +46,9 @@ Force IdleForce::getForce(GameObject* gameObject) const {
 
 Force SeekForce::getForce(GameObject* gameObject) const {
 
+	if (m_target == nullptr)
+		return{ 0, 0 };
+
 	// get target position
 	float tx = 0, ty = 0;
 	m_target->getPosition(&tx, &ty);
@@ -54,16 +57,13 @@ Force SeekForce::getForce(GameObject* gameObject) const {
 	float x = 0, y = 0;
 	gameObject->getPosition(&x, &y);
 
-	// get a vector to the target from "us"
+	// compare the two and get the distance between them
 	float xDiff = tx - x;
 	float yDiff = ty - y;
-	float distance = (xDiff * xDiff + yDiff * yDiff);
+	float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
 
 	// if not at the target then move towards them
 	if (distance > 0) {
-
-		distance = sqrt(distance);
-
 		// need to make the difference the length of 1 (normalize)
 		// this is so movement can be "pixels per second"
 		xDiff /= distance;
@@ -73,7 +73,7 @@ Force SeekForce::getForce(GameObject* gameObject) const {
 	float maxForce = 0;
 	gameObject->getBlackboard().get("maxForce", maxForce);
 
-	return { xDiff * maxForce, yDiff * maxForce };
+	return{ xDiff * maxForce, yDiff * maxForce };
 }
 
 Force FleeForce::getForce(GameObject* gameObject) const {
@@ -525,4 +525,99 @@ Force AlignmentForce::getForce(GameObject * gameObject) const
 	gameObject->getBlackboard().get("maxForce", maxForce);
 
 	return{ force.x * maxForce, force.y * maxForce };
+}
+
+bool PathBehaviour::execute(GameObject* gameObject, float deltaTime) {
+
+	std::list<Pathfinding::Node*>* path = nullptr;
+	if (gameObject->getBlackboard().get("path", &path) == false)
+		return false;
+
+	float speed = 0;
+	gameObject->getBlackboard().get("speed", speed);
+
+	float x = 0, y = 0;
+	gameObject->getPosition(&x, &y);
+
+	MyNode* first = (MyNode*)path->front();
+
+	// distance to first
+	float xDiff = first->x - x;
+	float yDiff = first->y - y;
+
+	float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
+
+	// if not at the target then move towards them
+	if (distance > 5) { // squared distance, so this is 5 pixels
+		xDiff /= distance;
+		yDiff /= distance;
+
+		// move to target (can overshoot!)
+		gameObject->translate(xDiff * speed * deltaTime, yDiff * speed * deltaTime);
+	}
+	else {
+		// at the node, remove it and move to the next
+		path->pop_front();
+		// if it was the last one, pick new path
+		if (path->empty()) {
+
+			// random end node
+			bool found = false;
+			do {
+				auto end = (*nodes)[rand() % nodes->size()];
+
+				found = Pathfinding::Search::dijkstra(first, end, *path);
+			} while (found == false);
+		}
+	}
+	return true;
+}
+
+void PathState::update(GameObject * gameObject, float deltaTime)
+{
+	std::list<Pathfinding::Node*>* path = nullptr;
+	if (gameObject->getBlackboard().get("path", &path) == false) {
+		// return false;
+	}
+	else {
+		float speed = 0;
+		gameObject->getBlackboard().get("speed", speed);
+
+		float x = 0, y = 0;
+		gameObject->getPosition(&x, &y);
+
+		MyNode* first = (MyNode*)path->front();
+
+		// distance to first
+		float xDiff = first->x - x;
+		float yDiff = first->y - y;
+
+		float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
+
+		// if not at the target then move towards them
+		if (distance > 5) { // squared distance, so this is 5 pixels
+			xDiff /= distance;
+			yDiff /= distance;
+
+			// move to target (can overshoot!)
+			gameObject->translate(xDiff * speed * deltaTime, yDiff * speed * deltaTime);
+		}
+		else {
+			// at the node, remove it and move to the next
+			path->pop_front();
+			// if it was the last one, pick new path
+			if (path->empty()) {
+
+				// random end node
+				bool found = false;
+				do {
+					auto end = (*nodes)[rand() % nodes->size()];
+
+					found = Pathfinding::Search::dijkstra(first, end, *path);
+				} while (found == false);
+				gameObject->getBlackboard().set("path", &path);
+			}
+		}
+		// return true;
+	}
 }
