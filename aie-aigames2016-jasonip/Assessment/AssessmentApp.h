@@ -50,37 +50,36 @@ protected:
 	std::vector<FiniteStateMachine>	m_soldierFSM;
 	PathBehaviour m_pathBehaviour;
 
+	std::vector<MyNode*>						m_sSpawn;
 	std::vector<MyNode*>						m_nodes;
 	std::list<Pathfinding::Node*>				m_path;
 	std::vector<std::list<Pathfinding::Node*>>	m_pathVector;
 
-	SeekForce				m_sseek;
+	SeekForce				m_sSeek;
+	WanderForce				m_sWander;
+	ObstacleAvoidanceForce	m_sAvoid;
 
 	MyNode* m_start;
 	MyNode* m_end;
-
-
-
+	
 	// zombies
 	std::vector<GameObject>			m_enemies;
 	std::vector<FiniteStateMachine>	m_enemyFSM;
+
+	std::vector<Vector2>			m_eSpawn;
 //	GameObject			m_enemies[10];
 //	FiniteStateMachine	m_fsm[50];
 //	FiniteStateMachine	m_zombieFSM;
 
-	SteeringBehaviour		m_steeringBehaviour;
-	WanderForce				m_wander;
-	SeekForce				m_seek;
-	IdleForce				m_idle;
-	CohesionForce			m_cohesion;
-	SeperationForce			m_seperation;
-	AlignmentForce			m_alignment;
-	ObstacleAvoidanceForce	m_avoid;
-
-
-
-
-
+//	SteeringBehaviour		m_steeringBehaviour;
+	WanderForce				m_eWander;
+	SeekForce				m_eSeek;
+	IdleForce				m_eIdle;
+	CohesionForce			m_eCohesion;
+	SeperationForce			m_eSeperation;
+	AlignmentForce			m_eAlignment;
+	ObstacleAvoidanceForce	m_eAvoid;
+	
 	struct Box {
 		float x, y, w, h;
 	};
@@ -90,7 +89,6 @@ protected:
 	};
 
 //	std::vector<Obstacle>	m_obstacles;
-	std::vector<Circle>	m_circleObstacles;
+	std::vector<Circle>		m_circleObstacles;
 	std::vector<Box>		m_boxObstacles;
-
 };

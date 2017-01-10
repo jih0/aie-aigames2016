@@ -25,6 +25,7 @@ public:
 
 	// update game object and execute behaviour
 	virtual void update(float deltaTime);
+	virtual void update(GameObject* target, float deltaTime);
 
 	// const glm::vec2& getPosition() const { return m_position; }
 	

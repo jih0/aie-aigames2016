@@ -134,7 +134,7 @@ public:
 
 	SteeringState() {}
 	virtual ~SteeringState() {}
-
+	
 	void addForce(SteeringForce* force, float weight = 1.0f) {
 		m_forces.push_back({ force, weight });
 	}
@@ -201,6 +201,10 @@ public:
 
 	PathState() {}
 	virtual ~PathState() {}
+
+	virtual void	onEnter(GameObject* gameObject) {}
+	
+	virtual void	onExit(GameObject* gameObject) {}
 
 	virtual void update(GameObject* gameObject, float deltaTime);
 

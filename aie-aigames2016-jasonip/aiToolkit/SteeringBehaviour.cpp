@@ -6,84 +6,60 @@
 
 Force IdleForce::getForce(GameObject* gameObject) const {
 	
-	// get target position
+	// get "target" position
 	float tx = 0, ty = 0;
-	m_target->getPosition(&tx, &ty);
+	gameObject->getPosition(&tx, &ty);
 
-	// get target velocity
-	Vector2* velocity = nullptr;
-	gameObject->getBlackboard().get("velocity", &velocity);
+	// get "target" velocity
+	Vector2* tv = nullptr;
+	gameObject->getBlackboard().get("velocity", &tv);
 
-	// add velocity to target
-	tx -= velocity->x;
-	ty -= velocity->y;
-
-	// get my position
-	float x = 0, y = 0;
-	gameObject->getPosition(&x, &y);
-
-	// get a vector to the target from "us"
-	float xDiff = tx - x;
-	float yDiff = ty - y;
-	float distance = (xDiff * xDiff + yDiff * yDiff);
-
-	// if not at the target then move towards them
-	if (distance > 0) {
-
-		distance = sqrt(distance);
-
-		// need to make the difference the length of 1 (normalize)
-		// this is so movement can be "pixels per second"
-		xDiff /= distance;
-		yDiff /= distance;
+	if (tv->x == 0 && tv->y == 0) {
+		return{ 0,0 };
 	}
+	else
+	{
+		// add velocity to target position
+		tx += tv->x;
+		ty += tv->y;
 
-	float maxForce = 0;
-	gameObject->getBlackboard().get("maxForce", maxForce);
+		// get my position
+		float x = 0, y = 0;
+		gameObject->getPosition(&x, &y);
 
-	return{ xDiff * maxForce, yDiff * maxForce };
+		// get an "evade" vector
+		float xDiff = x - tx;
+		float yDiff = y - ty;
+		float distance = (xDiff * xDiff + yDiff * yDiff);
+
+		// if not at the target then move towards them
+		if (distance > 0) {
+
+			distance = sqrt(distance);
+
+			// need to make the difference the length of 1 (normalize)
+			// this is so movement can be "pixels per second"
+			xDiff /= distance;
+			yDiff /= distance;
+		}
+
+		float maxForce = 0;
+		gameObject->getBlackboard().get("maxForce", maxForce);
+
+		return{ xDiff * maxForce, yDiff * maxForce };
+	}
 }
 
 Force SeekForce::getForce(GameObject* gameObject) const {
 
-	int tIndex = 1;
+	// SeekForce modified to be compatible with multiple targets
+	int tIndex = 0;
 	if (gameObject->getBlackboard().get("targetIndex", tIndex) == false) {
 		return{ 0, 0 };
 	}
 
-	//if (m_target == nullptr)
-	//	return{ 0, 0 };
-
-	//// get target position
-	//float tx = 0, ty = 0;
-	//m_target->getPosition(&tx, &ty);
-
-	//// get my position
-	//float x = 0, y = 0;
-	//gameObject->getPosition(&x, &y);
-
-	//// compare the two and get the distance between them
-	//float xDiff = tx - x;
-	//float yDiff = ty - y;
-	//float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
-
-	//// if not at the target then move towards them
-	//if (distance > 0) {
-	//	// need to make the difference the length of 1 (normalize)
-	//	// this is so movement can be "pixels per second"
-	//	xDiff /= distance;
-	//	yDiff /= distance;
-	//}
-
-	//float maxForce = 0;
-	//gameObject->getBlackboard().get("maxForce", maxForce);
-
-	//return{ xDiff * maxForce, yDiff * maxForce };
-
-
 	// get target position
 	float tx = 0, ty = 0;
-//	m_target->getPosition(&tx, &ty);
 	m_targets->at(tIndex).getPosition(&tx, &ty);
 
 	// get my position

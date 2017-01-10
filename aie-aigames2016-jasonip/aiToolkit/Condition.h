@@ -11,6 +11,51 @@ public:
 	virtual bool test(GameObject* gameObject) const = 0;
 };
 
+class DeadCondition : public Condition {
+public:
+
+	DeadCondition() {}
+	virtual ~DeadCondition() {}
+
+	virtual bool test(GameObject* gameObject) const {
+		bool alive;
+		gameObject->getBlackboard().get("isAlive", alive);
+		return !alive;
+	}
+};
+
+class TargetKilledCondition : public Condition {
+public:
+
+	TargetKilledCondition(std::vector<GameObject>* targets) { m_targets = targets; }
+	virtual ~TargetKilledCondition() {}
+
+	virtual bool test(GameObject* gameObject) const {
+		bool attacking;
+		gameObject->getBlackboard().get("attacking", attacking);
+
+		if (attacking) {
+			int index;
+			gameObject->getBlackboard().get("targetIndex", index);
+
+			bool tAlive;
+			m_targets->at(index).getBlackboard().get("isAlive", tAlive);
+
+			if (tAlive) {
+				return false;
+			}
+			else { 
+				gameObject->getBlackboard().set("attacking", false);
+				return true; 
+			}
+		}
+		else { return false; }
+	}
+
+private:
+	std::vector<GameObject>*	m_targets;
+};
+
 class FloatRangeCondition : public Condition {
 public:
 
@@ -48,9 +93,9 @@ private:
 class WithinRangeCondition : public Condition {
 public:
 
-	WithinRangeCondition(const GameObject* target, float range)
+	WithinRangeCondition(GameObject* target, float range)
 		: m_target(target), m_range(range) {}
-	WithinRangeCondition(const std::vector<GameObject>* targets, float range) 
+	WithinRangeCondition(std::vector<GameObject>* targets, float range)
 		: m_targets(targets), m_range(range) {}
 	virtual ~WithinRangeCondition() {}
 
@@ -60,50 +105,66 @@ public:
 		float x = 0, y = 0;
 		gameObject->getPosition(&x, &y);
 
+		bool targeted = true;
 		int i = 0;
-		float cDistance;
-		float distance;
+		float cDistance = 0.0f;
+		float distance = 0.0f;
+
 		for (auto& targets : *m_targets) {
-			// get target position
-			float tx = 0, ty = 0;
-			//m_target->getPosition(&tx, &ty);
-			targets.getPosition(&tx, &ty);
+			int health;
+			targets.getBlackboard().get("HP", health);
 
-			// get distance between gameObject and potential target
-			distance = sqrt((tx - x)*(tx - x) + (ty - y)*(ty - y));
-
-			//gameObject->getBlackboard().set("target", &m_target, false);
-			int c = 0;
-			float cx = 0, cy = 0;
-			gameObject->getBlackboard().get("targetIndex", c);
-
-			m_targets->at(c).getPosition(&cx, &cy);
-			cDistance = sqrt((cx - x)*(cx - x) + (cy - y)*(cy - y)); // squared distance to the current "closest" target
-
-			if (distance < cDistance)
-			{
-				// if distance to "potential" target is closer than the "closest" target, update "closest" target
-				cDistance = distance;
-				gameObject->getBlackboard().set("targetIndex", i);
+			// if target is flagged as dead, then ignore
+			if (health <= 0) {
+				// if target's health is zero, skip
+				targets.getBlackboard().set("isAlive", false);
+				targeted = false;
+				++i;
 			}
-			else {}
-			++i;
+			else {
+				// get target position
+				float tx = 0, ty = 0;
+				//m_target->getPosition(&tx, &ty);
+				targets.getPosition(&tx, &ty);
+
+				// get distance between gameObject and potential target
+				distance = sqrt((tx - x)*(tx - x) + (ty - y)*(ty - y));
+
+				//gameObject->getBlackboard().set("target", &m_target, false);
+				int c = 0;
+				float cx = 0, cy = 0;
+				gameObject->getBlackboard().get("targetIndex", c);
+
+				m_targets->at(c).getPosition(&cx, &cy);
+				cDistance = sqrt((cx - x)*(cx - x) + (cy - y)*(cy - y)); // squared distance to the current "closest" target
+
+				if (distance < cDistance)
+				{
+					// if distance to "potential" target is closer than the "closest" target, update "closest" target
+					cDistance = distance;
+					targeted = true;
+					gameObject->getBlackboard().set("targetIndex", i);
+				}
+				else {}
+				++i;
+			}
 		}
 
-		if (cDistance <= m_range) {
+		if (!targeted) {
+			gameObject->getBlackboard().set("attacking", false);
+			return false;
+		}
+		else if (cDistance <= m_range) {
+			gameObject->getBlackboard().set("attacking", true);
 			return true;
 		}
-		else { 
-			// closest target to gameObject is not within range
-			//gameObject->getBlackboard().set("targetIndex", 0);
-			return false; 
-		} 
 	}
+
 		
 private:
 
-	const std::vector<GameObject>* m_targets;
-	const GameObject* m_target;
+	std::vector<GameObject>* m_targets;
+	GameObject* m_target;
 	float m_range;
 };
 
