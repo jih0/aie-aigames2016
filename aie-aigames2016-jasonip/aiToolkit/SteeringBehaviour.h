@@ -226,18 +226,18 @@ protected:
 class SeekForce : public SteeringForce {
 public:
 
-	SeekForce(GameObject* target = nullptr) : m_target(nullptr) {}
+	SeekForce(GameObject* target = nullptr) : m_target(nullptr), m_targets(nullptr) {}
 	virtual ~SeekForce() {}
 
 	void setTarget(GameObject* target) { m_target = target; }
-//	void setTarget(std::vector<GameObject>* vTarget) { m_targets = vTarget; }
+	void setTarget(std::vector<GameObject>* vTarget) { m_targets = vTarget; }
 
 	virtual Force getForce(GameObject* gameObject) const;
 	
 protected:
 
 	GameObject*					m_target;
-//	std::vector<GameObject>*	m_targets;
+	std::vector<GameObject>*	m_targets;
 };
 
 class FleeForce : public SteeringForce {

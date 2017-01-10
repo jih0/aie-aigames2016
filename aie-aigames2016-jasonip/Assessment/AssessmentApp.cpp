@@ -15,9 +15,9 @@ AssessmentApp::~AssessmentApp() {
 
 bool AssessmentApp::startup() {
 	
-	m_detectRadius = 100;
-	m_enemyNum = 1;
-	m_soldierNum = 1;
+	m_detectRadius = 50;
+	m_enemyNum = 10;
+	m_soldierNum = 5;
 
 	m_soldiers.resize(m_soldierNum);
 	m_soldierFSM.resize(m_soldierNum);
@@ -26,8 +26,8 @@ bool AssessmentApp::startup() {
 	m_enemies.resize(m_enemyNum);
 	m_enemyFSM.resize(m_enemyNum);
 
-	m_sseek.setTarget(&m_enemies[0]);
-	m_seek.setTarget(&m_soldiers[0]);
+	m_sseek.setTarget(&m_enemies);
+	m_seek.setTarget(&m_soldiers);
 
 
 	m_spriteSheet.load("./textures/spritesheet_tiles.png");
@@ -41,7 +41,7 @@ bool AssessmentApp::startup() {
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	unsigned int seed = (unsigned int)timeinfo->tm_sec;
-//	srand(seed);
+	srand(seed);
 
 	// set up background
 	//m_background.load("./map/map0.png");
@@ -150,7 +150,7 @@ bool AssessmentApp::startup() {
 
 	// setup conditions that will trigger transition
 	//Condition* sWithinRangeCondition = new WithinRangeCondition(&m_player, m_detectRadius);
-	Condition* sWithinRangeCondition = new WithinRangeCondition(&m_enemies[0], m_detectRadius);
+	Condition* sWithinRangeCondition = new WithinRangeCondition(&m_enemies, m_detectRadius);
 	Condition* sNotWithinRangeCondition = new NotCondition(sWithinRangeCondition);
 //	Condition* wanderTimeOutCondition = new FloatGreaterCondition(wanderState->getTimerPtr(), 5);
 //	Condition* idleTimeOutCondition = new FloatGreaterCondition(idleState->getTimerPtr(), 0);
@@ -163,8 +163,8 @@ bool AssessmentApp::startup() {
 //	Transition* idleTimeOut = new Transition(wanderState, idleTimeOutCondition);
 
 	// add transitions to states
-	sAttackState->addTransition(sNotWithinRange);
-	pathfindState->addTransition(sWithinRange);
+	//sAttackState->addTransition(sNotWithinRange);
+	//pathfindState->addTransition(sWithinRange);
 //	wanderState->addTransition(wanderWithinRange);
 //	wanderState->addTransition(wanderTimeOut);
 //	idleState->addTransition(idleWithinRange);
@@ -184,7 +184,7 @@ bool AssessmentApp::startup() {
 		//Pathfinding::Search::aStar(m_start, m_end, m_path, myFunc);
 
 		soldier.getBlackboard().set("path", &m_pathVector[i]);
-		soldier.getBlackboard().set("speed", 50.0f);
+		soldier.getBlackboard().set("speed", 20.0f);
 
 		float stateTimer = 0.0f;
 
@@ -199,6 +199,7 @@ bool AssessmentApp::startup() {
 		wd->x = 0;
 		wd->y = 0;
 
+		soldier.getBlackboard().set("targetIndex", 0);
 		soldier.getBlackboard().set("stateTimer", 0.0f);
 		soldier.getBlackboard().set("velocity", v, true);
 		soldier.getBlackboard().set("maxForce", 150.f);
@@ -212,11 +213,8 @@ bool AssessmentApp::startup() {
 		soldier.addBehaviour(&m_soldierFSM[i]);
 		pathfindState->nodes = &m_nodes;
 		++i;
-		
-
-		
 	}
-
+	srand(seed);
 
 	//// example of a lambda object: identical to heuristicManhattan
 	//// square brackets represent that it's a lambda function
@@ -258,7 +256,7 @@ bool AssessmentApp::startup() {
 	
 	// setup conditions that will trigger transition
 	//Condition* withinRangeCondition = new WithinRangeCondition(&m_player, m_detectRadius);
-	Condition* withinRangeCondition = new WithinRangeCondition(&m_soldiers[0], m_detectRadius);
+	Condition* withinRangeCondition = new WithinRangeCondition(&m_soldiers, m_detectRadius);
 	Condition* notWithinRangeCondition = new NotCondition(withinRangeCondition);
 	Condition* wanderTimeOutCondition = new FloatGreaterCondition(wanderState->getTimerPtr(), 5);
 	Condition* idleTimeOutCondition = new FloatGreaterCondition(idleState->getTimerPtr(), 0);
@@ -298,6 +296,7 @@ bool AssessmentApp::startup() {
 		wd->x = 0;
 		wd->y = 0;
 
+		enemy.getBlackboard().set("targetIndex", 0);
 		enemy.getBlackboard().set("stateTimer", 0.0f);
 		enemy.getBlackboard().set("velocity", v, true);
 		enemy.getBlackboard().set("maxForce", 150.f);

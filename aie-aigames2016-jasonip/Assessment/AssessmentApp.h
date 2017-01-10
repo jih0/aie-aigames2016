@@ -46,7 +46,7 @@ protected:
 	KeyboardBehaviour	m_keyboardBehaviour;
 
 	// soldiers
-	std::vector<GameObject>			m_soldiers;
+	std::vector<GameObject>		m_soldiers;
 	std::vector<FiniteStateMachine>	m_soldierFSM;
 	PathBehaviour m_pathBehaviour;
 

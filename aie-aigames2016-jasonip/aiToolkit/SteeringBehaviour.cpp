@@ -46,12 +46,45 @@ Force IdleForce::getForce(GameObject* gameObject) const {
 
 Force SeekForce::getForce(GameObject* gameObject) const {
 
-	if (m_target == nullptr)
+	int tIndex = 1;
+	if (gameObject->getBlackboard().get("targetIndex", tIndex) == false) {
 		return{ 0, 0 };
+	}
+
+	//if (m_target == nullptr)
+	//	return{ 0, 0 };
+
+	//// get target position
+	//float tx = 0, ty = 0;
+	//m_target->getPosition(&tx, &ty);
+
+	//// get my position
+	//float x = 0, y = 0;
+	//gameObject->getPosition(&x, &y);
+
+	//// compare the two and get the distance between them
+	//float xDiff = tx - x;
+	//float yDiff = ty - y;
+	//float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
+
+	//// if not at the target then move towards them
+	//if (distance > 0) {
+	//	// need to make the difference the length of 1 (normalize)
+	//	// this is so movement can be "pixels per second"
+	//	xDiff /= distance;
+	//	yDiff /= distance;
+	//}
+
+	//float maxForce = 0;
+	//gameObject->getBlackboard().get("maxForce", maxForce);
+
+	//return{ xDiff * maxForce, yDiff * maxForce };
+
 
 	// get target position
 	float tx = 0, ty = 0;
-	m_target->getPosition(&tx, &ty);
+//	m_target->getPosition(&tx, &ty);
+	m_targets->at(tIndex).getPosition(&tx, &ty);
 
 	// get my position
 	float x = 0, y = 0;

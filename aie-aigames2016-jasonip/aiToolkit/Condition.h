@@ -50,8 +50,8 @@ public:
 
 	WithinRangeCondition(const GameObject* target, float range)
 		: m_target(target), m_range(range) {}
-//	WithinRangeCondition(const std::vector<GameObject>* targets, float range) 
-//		: m_targets(targets), m_range(range) {}
+	WithinRangeCondition(const std::vector<GameObject>* targets, float range) 
+		: m_targets(targets), m_range(range) {}
 	virtual ~WithinRangeCondition() {}
 
 	virtual bool test(GameObject* gameObject) const {
@@ -60,23 +60,44 @@ public:
 		float x = 0, y = 0;
 		gameObject->getPosition(&x, &y);
 
-//		for (auto& targets : *m_targets) {
+		int i = 0;
+		float cDistance;
+		float distance;
+		for (auto& targets : *m_targets) {
 			// get target position
 			float tx = 0, ty = 0;
-			m_target->getPosition(&tx, &ty);
+			//m_target->getPosition(&tx, &ty);
+			targets.getPosition(&tx, &ty);
 
-			// compare the two and get the distance between them
-			float xDiff = tx - x;
-			float yDiff = ty - y;
-			float distance = sqrt(xDiff*xDiff + yDiff*yDiff);
+			// get distance between gameObject and potential target
+			distance = sqrt((tx - x)*(tx - x) + (ty - y)*(ty - y));
 
-			if (distance <= m_range) {
-				//gameObject->getBlackboard().set("target", &m_target, false);
-				return true;
+			//gameObject->getBlackboard().set("target", &m_target, false);
+			int c = 0;
+			float cx = 0, cy = 0;
+			gameObject->getBlackboard().get("targetIndex", c);
+
+			m_targets->at(c).getPosition(&cx, &cy);
+			cDistance = sqrt((cx - x)*(cx - x) + (cy - y)*(cy - y)); // squared distance to the current "closest" target
+
+			if (distance < cDistance)
+			{
+				// if distance to "potential" target is closer than the "closest" target, update "closest" target
+				cDistance = distance;
+				gameObject->getBlackboard().set("targetIndex", i);
 			}
-			else { return false; }
-//		}
+			else {}
+			++i;
+		}
 
+		if (cDistance <= m_range) {
+			return true;
+		}
+		else { 
+			// closest target to gameObject is not within range
+			//gameObject->getBlackboard().set("targetIndex", 0);
+			return false; 
+		} 
 	}
 		
 private:
