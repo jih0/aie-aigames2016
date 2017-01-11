@@ -166,6 +166,10 @@ public:
 				return false;
 			}
 		}
+		else {
+			gameObject->getBlackboard().set("attacking", false);
+			return false;
+		}
 	}
 
 		

@@ -45,6 +45,9 @@
     <ClCompile Include="..\aiToolkit\SteeringBehaviour.cpp">
       <Filter>AIToolkit</Filter>
     </ClCompile>
+    <ClCompile Include="..\aiToolkit\Pathfinding.cpp">
+      <Filter>AIToolkit</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="week12_FlockingApp.h">
@@ -75,6 +78,9 @@
       <Filter>AIToolkit</Filter>
     </ClInclude>
     <ClInclude Include="..\aiToolkit\SteeringBehaviour.h">
+      <Filter>AIToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="..\aiToolkit\Pathfinding.h">
       <Filter>AIToolkit</Filter>
     </ClInclude>
   </ItemGroup>

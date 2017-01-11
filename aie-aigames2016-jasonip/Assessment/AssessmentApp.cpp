@@ -60,8 +60,8 @@ bool AssessmentApp::startup() {
 				pixels[index + 2] == 255) { // blue is water, and is to be avoided by all
 
 				Box b;
-				b.x = (20 * x) + 10;
-				b.y = getWindowHeight() - ((20 * y) + 10);
+				b.x = (20.0f * x) + 10.0f;
+				b.y = getWindowHeight() - ((20.0f * y) + 10.0f);
 				b.w = 20;
 				b.h = 20;
 
@@ -98,8 +98,8 @@ bool AssessmentApp::startup() {
 				pixels[index + 2] == 0) { // black is our zombie spawn point
 
 				Vector2 v;
-				v.x = (20 * x) + 10;
-				v.y = getWindowHeight() - ((20 * y) + 10);
+				v.x = (20.0f * x) + 10.0f;
+				v.y = getWindowHeight() - ((20.0f * y) + 10.0f);
 
 				m_eSpawn.push_back(v);
 			}
@@ -224,8 +224,8 @@ bool AssessmentApp::startup() {
 	// setup conditions that will trigger transition
 	Condition* eWithinRangeCondition = new WithinRangeCondition(&m_soldiers, m_detectRadius);
 	Condition* eNotWithinRangeCondition = new NotCondition(eWithinRangeCondition);
-	Condition* eWanderTimeOutCondition = new FloatGreaterCondition(eWanderState->getTimerPtr(), 5);
-	Condition* eIdleTimeOutCondition = new FloatGreaterCondition(eIdleState->getTimerPtr(), 0);
+	Condition* eWanderTimeOutCondition = new FloatGreaterCondition(eWanderState->getTimerPtr(), 10);
+	Condition* eIdleTimeOutCondition = new FloatGreaterCondition(eIdleState->getTimerPtr(), 3);
 	Condition* eIsDeadCondition = new DeadCondition();
 	Condition* eIsNotDeadCondition = new NotCondition(eIsDeadCondition);
 	Condition* eTargetKilledCondition = new TargetKilledCondition(&m_soldiers);

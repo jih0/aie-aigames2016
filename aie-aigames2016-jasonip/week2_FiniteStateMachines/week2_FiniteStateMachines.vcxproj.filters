@@ -39,6 +39,9 @@
     <ClCompile Include="..\aiToolkit\Blackboard.cpp">
       <Filter>AIToolkit</Filter>
     </ClCompile>
+    <ClCompile Include="..\aiToolkit\Pathfinding.cpp">
+      <Filter>AIToolkit</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="week2_FiniteStateMachinesApp.h">
@@ -66,6 +69,9 @@
       <Filter>AIToolkit</Filter>
     </ClInclude>
     <ClInclude Include="..\aiToolkit\Blackboard.h">
+      <Filter>AIToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="..\aiToolkit\Pathfinding.h">
       <Filter>AIToolkit</Filter>
     </ClInclude>
   </ItemGroup>

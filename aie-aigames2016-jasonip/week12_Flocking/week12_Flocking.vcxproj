@@ -15,6 +15,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>week12_Flocking</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>12_Flocking</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -53,7 +54,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)temp\$(ProjectName)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)temp\$(ProjectName)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)temp/bootstrap/$(Configuration);$(SolutionDir)aiToolkit;$(SolutionDir)bootstrap;$(SolutionDir)dependencies/imgui;$(SolutionDir)dependencies/glm;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)aiToolkit;$(SolutionDir)temp/bootstrap/$(Configuration);$(SolutionDir)bootstrap;$(SolutionDir)dependencies/imgui;$(SolutionDir)dependencies/glm;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)temp\bootstrap\$(Configuration);$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -94,6 +95,7 @@
     <ClCompile Include="..\aiToolkit\FollowBehaviour.cpp" />
     <ClCompile Include="..\aiToolkit\GameObject.cpp" />
     <ClCompile Include="..\aiToolkit\KeyboardBehaviour.cpp" />
+    <ClCompile Include="..\aiToolkit\Pathfinding.cpp" />
     <ClCompile Include="..\aiToolkit\State.cpp" />
     <ClCompile Include="..\aiToolkit\SteeringBehaviour.cpp" />
     <ClCompile Include="week12_FlockingApp.cpp" />
@@ -107,6 +109,7 @@
     <ClInclude Include="..\aiToolkit\FollowBehaviour.h" />
     <ClInclude Include="..\aiToolkit\GameObject.h" />
     <ClInclude Include="..\aiToolkit\KeyboardBehaviour.h" />
+    <ClInclude Include="..\aiToolkit\Pathfinding.h" />
     <ClInclude Include="..\aiToolkit\State.h" />
     <ClInclude Include="..\aiToolkit\SteeringBehaviour.h" />
     <ClInclude Include="week12_FlockingApp.h" />

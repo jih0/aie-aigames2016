@@ -16,12 +16,12 @@ week3_SteeringBehavioursApp::~week3_SteeringBehavioursApp() {
 
 bool week3_SteeringBehavioursApp::startup() {
 	
-	time_t rawtime;
-	struct tm* timeinfo;
+	//time_t rawtime;
+	//struct tm* timeinfo;
 
-	time(&rawtime);
-	timeinfo = localtime(&rawtime);
-	unsigned int seed = (unsigned int)timeinfo->tm_sec;
+	//time(&rawtime);
+	//timeinfo = localtime(&rawtime);
+	//unsigned int seed = (unsigned int)timeinfo->tm_sec;
 
 	m_2dRenderer = new aie::Renderer2D();
 
@@ -91,7 +91,7 @@ bool week3_SteeringBehavioursApp::startup() {
 	}
 
 	// set up obstacles
-	srand(seed);
+	//srand(seed);
 	for (int i = 0; i < 3; ++i)
 	{
 		Circle c;

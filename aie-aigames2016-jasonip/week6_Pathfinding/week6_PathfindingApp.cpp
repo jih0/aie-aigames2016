@@ -25,8 +25,8 @@ bool week6_PathfindingApp::startup() {
 	auto channels = m_map.getFormat();
 
 	// create nodes, using map1.png
-	for (int x = 0; x < m_map.getWidth(); ++x) {
-		for (int y = 0; y < m_map.getHeight(); ++y) {
+	for (unsigned int x = 0; x < m_map.getWidth(); ++x) {
+		for (unsigned int y = 0; y < m_map.getHeight(); ++y) {
 			
 			int index = (y * m_map.getWidth() + x) * channels;
 
@@ -157,8 +157,8 @@ void week6_PathfindingApp::draw() {
 	auto pixels = m_map.getPixels();
 	auto channels = m_map.getFormat();
 
-	for (int x = 0; x < m_map.getWidth(); ++x) {
-		for (int y = 0; y < m_map.getHeight(); ++y) {
+	for (unsigned int x = 0; x < m_map.getWidth(); ++x) {
+		for (unsigned int y = 0; y < m_map.getHeight(); ++y) {
 
 			// sprite offsets for spriteSheet 
 			float pw = 1.0f / m_spriteSheet.getWidth();
