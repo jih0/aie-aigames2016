@@ -2,7 +2,6 @@
 #include "Font.h"
 #include "Input.h"
 
-#include <ctime>
 #include <string>
 
 AssessmentApp::AssessmentApp() {
@@ -15,9 +14,9 @@ AssessmentApp::~AssessmentApp() {
 
 bool AssessmentApp::startup() {
 	
-	m_detectRadius = 350;
-	m_enemyNum = 1;
-	m_soldierNum = 1;
+	m_detectRadius = 100;
+	m_enemyNum = 10;
+	m_soldierNum = 6;
 
 	m_soldiers.resize(m_soldierNum);
 	m_soldierFSM.resize(m_soldierNum);
@@ -29,22 +28,9 @@ bool AssessmentApp::startup() {
 	m_sSeek.setTarget(&m_enemies);
 	m_eSeek.setTarget(&m_soldiers);
 
-	m_spriteSheet.load("./textures/spritesheet_tiles.png");
-	m_charSpriteSheet.load("./textures/spritesheet_characters.png");
+	m_spriteSheet.load("./textures/roguelikeSheet_transparent.png");
+	m_charSpriteSheet.load("./textures/roguelikeChar_transparent.png");
 	
-	// obtain time information to use as rand() seed information
-	// used to generate pseudo-procedurally generated assets
-	time_t rawtime;
-	struct tm* timeinfo;
-
-	time(&rawtime);
-	timeinfo = localtime(&rawtime);
-	unsigned int seed = (unsigned int)timeinfo->tm_sec;
-	srand(seed);
-
-	// set up background
-	//m_background.load("./map/map0.png");
-
 	m_2dRenderer = new aie::Renderer2D();
 
 	m_font = new aie::Font("./font/consolas.ttf", 32);
@@ -147,30 +133,24 @@ bool AssessmentApp::startup() {
 	PathState* pathfindState = new PathState();
 
 	SteeringState* sAttackState = new SteeringState();
-	sAttackState->addForce(&m_sSeek, 1.0f);
+	sAttackState->addForce(&m_sSeek, 2.0f);
 	sAttackState->addForce(&m_sAvoid, 0.5f);
 
 	SteeringState* sDeadState = new SteeringState();
 
-	SteeringState* sWanderState = new SteeringState();
-	sWanderState->addForce(&m_sWander, 1.0f);
-	sWanderState->addForce(&m_sAvoid, 0.5f);
-
 	// setup conditions that will trigger transition
 	Condition* sWithinRangeCondition = new WithinRangeCondition(&m_enemies, m_detectRadius);
-	Condition* sNotWithinRangeCondition = new NotCondition(sWithinRangeCondition);
+	Condition* sNotWithinRangeCondition = new NoneWithinRangeCondition(&m_enemies, m_detectRadius);
 	Condition* sIsDeadCondition = new DeadCondition();
 	Condition* sIsNotDeadCondition = new NotCondition(sIsDeadCondition);
 	Condition* sTargetKilledCondition = new TargetKilledCondition(&m_enemies);
-	Condition* sWanderTimeOutCondition = new FloatGreaterCondition(sWanderState->getTimerPtr(), 2);
 
 	// add transitions
 	Transition* sWithinRange = new Transition(sAttackState, sWithinRangeCondition);
 	Transition* sNotWithinRange = new Transition(pathfindState, sNotWithinRangeCondition);
 	Transition* sIsNotDead = new Transition(pathfindState, sIsNotDeadCondition);
 	Transition* sIsDead = new Transition(sDeadState, sIsDeadCondition);
-	Transition* sTargetKilled = new Transition(sWanderState, sTargetKilledCondition);
-	Transition* sWanderTimeOut = new Transition(pathfindState, sWanderTimeOutCondition);
+	Transition* sTargetKilled = new Transition(pathfindState, sTargetKilledCondition);
 
 	// add transitions to states
 	sAttackState->addTransition(sNotWithinRange);
@@ -178,7 +158,6 @@ bool AssessmentApp::startup() {
 	sAttackState->addTransition(sTargetKilled);
 	pathfindState->addTransition(sWithinRange);
 	sDeadState->addTransition(sIsNotDead);
-	sWanderState->addTransition(sWanderTimeOut);
 
 	int i = 0;
 	// set up soldiers
@@ -195,8 +174,8 @@ bool AssessmentApp::startup() {
 
 		soldier.getBlackboard().set("isAlive", true);
 		soldier.getBlackboard().set("HP", 5);
-		soldier.getBlackboard().set("AP", 6);
-		soldier.getBlackboard().set("attackRange", 15.0f);
+		soldier.getBlackboard().set("AP", 5);
+		soldier.getBlackboard().set("attackRange", 20.0f);
 		soldier.getBlackboard().set("attacking", false);
 		soldier.getBlackboard().set("targetIndex", 0);
 		soldier.getBlackboard().set("attackCooldown", 1.0f); // soldiers attack once per second
@@ -205,12 +184,12 @@ bool AssessmentApp::startup() {
 		soldier.getBlackboard().set("maxForce", 150.f);
 		soldier.getBlackboard().set("maxVelocity", 60.f);
 		soldier.getBlackboard().set("spriteRotation", 0.0f);
+		soldier.getBlackboard().set("deathTimer", 3.0f); // soldiers will reanimate in x seconds after it dies
 
 		// defining initial start and end nodes
 		unsigned int spawnPt = rand() % 3;
 		m_start = m_sSpawn[spawnPt];
 		m_end = m_nodes[rand() % m_nodes.size()];
-
 		soldier.setPosition(m_start->x, m_start->y);
 
 		m_soldierFSM[i].setInitialState(pathfindState);
@@ -294,17 +273,18 @@ bool AssessmentApp::startup() {
 		
 		enemy.getBlackboard().set("isAlive", true);
 		enemy.getBlackboard().set("HP", 3);
-		enemy.getBlackboard().set("AP", 4);
+		enemy.getBlackboard().set("AP", 3);
 		enemy.getBlackboard().set("attackRange", 15.0f);
 		enemy.getBlackboard().set("attacking", false);
 		enemy.getBlackboard().set("targetIndex", 0);
-		enemy.getBlackboard().set("attackCooldown", 0.5f); // zombies attack once per 1.5 seconds
+		enemy.getBlackboard().set("attackCooldown", 1.0f); // zombies attack once per 1.5 seconds
 		enemy.getBlackboard().set("stateTimer", 0.0f);
 		enemy.getBlackboard().set("velocity", v, true);
 		enemy.getBlackboard().set("maxForce", 150.f);
-		enemy.getBlackboard().set("maxVelocity", 50.f);
+		enemy.getBlackboard().set("maxVelocity", 40.f);
 		enemy.getBlackboard().set("wanderData", wd, true);
 		enemy.getBlackboard().set("spriteRotation", 0.0f);
+		enemy.getBlackboard().set("deathTimer", 5.0f); // zombie will reanimate in x seconds after it dies
 
 		unsigned int spawnPt = rand() % 10; 
 		enemy.setPosition( m_eSpawn[spawnPt].x, m_eSpawn[spawnPt].y );
@@ -328,9 +308,10 @@ void AssessmentApp::update(float deltaTime) {
 	m_timer += deltaTime;
 	
 	// update player
-	m_player.update(deltaTime);
+//	m_player.update(deltaTime);
 
 	// update soldiers
+	int i = 0;
 	for (auto& soldier : m_soldiers) {
 		bool alive;
 		soldier.getBlackboard().get("isAlive", alive);
@@ -339,119 +320,81 @@ void AssessmentApp::update(float deltaTime) {
 			soldier.getBlackboard().get("targetIndex", index);
 			soldier.update(&m_enemies.at(index), deltaTime);
 		}
-		//else {
-		//	int deathTimer;
-		//	soldier.getBlackboard().get("stateTimer", deathTimer);
-		//	if (deathTimer > 5.0f) {
-		//		unsigned int spawnPt = rand() % 3;
-		//		m_start = m_sSpawn[spawnPt];
-		//		m_end = m_nodes[rand() % m_nodes.size()];
-		//		soldier.setPosition(m_start->x, m_start->y);
+		else {
+			float deadTime;
+			soldier.getBlackboard().get("deathTimer", deadTime);
 
-		//		soldier.getBlackboard().set("HP", 5);
-		//		soldier.getBlackboard().set("isAlive", true);
-		//	}
-		//	else {
-		//		deathTimer += deltaTime;
+			if (deadTime <= 0) {
+				// initialise all settings for the soldier
+				soldier.getBlackboard().set("isAlive", true);
+				soldier.getBlackboard().set("HP", 5);
+				soldier.getBlackboard().set("AP", 6);
+				soldier.getBlackboard().set("attackRange", 15.0f);
+				soldier.getBlackboard().set("attacking", false);
+				soldier.getBlackboard().set("targetIndex", 0);
+				soldier.getBlackboard().set("attackCooldown", 1.0f);
+				soldier.getBlackboard().set("stateTimer", 0.0f);
+				soldier.getBlackboard().set("maxForce", 150.f);
+				soldier.getBlackboard().set("maxVelocity", 60.f);
+				soldier.getBlackboard().set("spriteRotation", 0.0f);
+				soldier.getBlackboard().set("deathTimer", 3.0f); // soldiers will reanimate in x seconds after it dies
+
+				// defining initial start and end nodes
+				unsigned int spawnPt = rand() % 3; 
+				m_start = m_sSpawn[spawnPt];
+				m_end = m_nodes[rand() % m_nodes.size()];
+				soldier.setPosition(m_start->x, m_start->y);
+				Pathfinding::Search::dijkstra(m_start, m_end, m_pathVector[i]);
 			}
-	//	}
-	//}
+			else {
+				deadTime -= deltaTime;
+				soldier.getBlackboard().set("deathTimer", deadTime);
+			}
+		}
+		++i;
+	}
 
 	// update enemies
 	for (auto& enemy : m_enemies) {
 		bool alive;
 		enemy.getBlackboard().get("isAlive", alive);
+
 		if (alive) {
 			int index;
 			enemy.getBlackboard().get("targetIndex", index);
 			enemy.update(&m_soldiers.at(index), deltaTime);
-		//}
-		////else {
-		////	int deathTimer;
-		//	enemy.getBlackboard().get("stateTimer", deathTimer);
-		//	if (deathTimer > 5.0f) {
-		//		unsigned int spawnPt = rand() % 10;
-		//		enemy.setPosition(m_eSpawn[spawnPt].x, m_eSpawn[spawnPt].y);
+		}
+		else {
+			float deadTime;
+			enemy.getBlackboard().get("deathTimer", deadTime);
 
-		//		enemy.getBlackboard().set("HP", 3);
-		//		enemy.getBlackboard().set("isAlive", true);
-		//	}
-		//	else {
-		//		deathTimer += deltaTime;
-		//	}
+			if (deadTime <= 0) {
+				// initialise all settings for zombie
+				enemy.getBlackboard().set("isAlive", true);
+				enemy.getBlackboard().set("HP", 3);
+				enemy.getBlackboard().set("AP", 4);
+				enemy.getBlackboard().set("attackRange", 15.0f);
+				enemy.getBlackboard().set("attacking", false);
+				enemy.getBlackboard().set("targetIndex", 0);
+				enemy.getBlackboard().set("attackCooldown", 0.5f);
+				enemy.getBlackboard().set("stateTimer", 0.0f);
+				enemy.getBlackboard().set("maxForce", 150.f);
+				enemy.getBlackboard().set("maxVelocity", 40.f);
+				enemy.getBlackboard().set("spriteRotation", 0.0f);
+				enemy.getBlackboard().set("deathTimer", 5.0f); // zombie will reanimate in x seconds after it dies
+
+				// spawn point!
+				unsigned int spawnPt = rand() % 10;
+				enemy.setPosition(m_eSpawn[spawnPt].x, m_eSpawn[spawnPt].y);
+
+			}
+			else {
+				deadTime -= deltaTime;
+				enemy.getBlackboard().set("deathTimer", deadTime);
+			}
 		}
 	}
 
-
-/*		float x = 0, y = 0;
-		enemy.getPosition(&x, &y);
-
-		// calculate sprite rotation
-		float rotation = 0.0f; // rotation in radians
-//		float rx = 0, ry = 0; 
-		Vector2 *v = {};
-		enemy.getBlackboard().get("velocity", &v);
-		float vLength = sqrt(v->x*v->x + v->y*v->y);
-
-		rx = v->x + x; // normalised x;
-		ry = v->y + y; // normalised y;
-
-		std::string str = std::to_string(v->x);
-		const char* cstr = str.c_str();
-		m_2dRenderer->drawText(m_font, cstr, x, y + 40);
-		str = std::to_string(v->y);
-		cstr = str.c_str();
-		m_2dRenderer->drawText(m_font, cstr, x, y + 20);
-
-		// draw enemy direction vector
-		m_2dRenderer->setRenderColour(1, 1, 0);
-		m_2dRenderer->drawLine(x, y, rx, ry);
-
-		if (vLength > 0.0f) {
-			if (v->x == 0) {
-				if (v->y == 0) {
-					// do nothing, not moving
-				}
-				else if (v->y > 0) {
-					rotation = (float)M_PI_2;
-				}
-				else if (v->y < 0) {
-					rotation = 3 * (float)M_PI_2;
-				}
-				else {}
-			}
-			else if (v->x > 0) {
-				if (v->y == 0) {
-					rotation = 0.0f;
-				}
-				else if (v->y > 0) {
-					rotation = cosf(v->x / vLength);
-				}
-				else if (v->y < 0) {
-					rotation = (3 * (float)M_PI_2) + cosf(v->y / vLength);
-				}
-				else {}
-			}
-			else if (v->x < 0) {
-				if (v->y == 0) {
-					rotation = (float)M_PI;
-				}
-				else if (v->y > 0) {
-					rotation = (float)M_PI_2 + cosf(v->y / vLength);
-				}
-				else if (v->y < 0) {
-					rotation = (float)M_PI + cosf(v->x / vLength);
-				}
-				else {}
-			}
-			else {}
-		}
-		else { enemy.getBlackboard().get("spriteRotation", rotation); }
-
-		// update blackboard
-		enemy.getBlackboard().set("spriteRotation", rotation);
-	}
-*/
 	// input example
 	aie::Input* input = aie::Input::getInstance();
 
@@ -472,6 +415,8 @@ void AssessmentApp::update(float deltaTime) {
 
 void AssessmentApp::draw() {
 
+	m_font = new aie::Font("./font/consolas.ttf", 20);
+
 	// wipe the screen to the background colour
 	clearScreen();
 
@@ -480,7 +425,78 @@ void AssessmentApp::draw() {
 
 	float x = 0, y = 0;
 
-	for (auto obstacle : m_boxObstacles) {
+	// draw map
+	auto pixels = m_map.getPixels();
+	auto channels = m_map.getFormat();
+
+	// create nodes, using map png
+	for (unsigned int x = 0; x < m_map.getWidth(); ++x) {
+		for (unsigned int y = 0; y < m_map.getHeight(); ++y) {
+
+			// sprite offsets for spriteSheet 
+			float pw = 1.0f / m_spriteSheet.getWidth();
+			float ph = 1.0f / m_spriteSheet.getHeight();
+			float w = pw * 16.0f;
+			float h = ph * 16.0f;
+
+			int index = (y * m_map.getWidth() + x) * channels;
+
+			if (pixels[index + 0] == 255 &&
+				pixels[index + 1] == 255 &&
+				pixels[index + 2] == 255) { // white is background, aka grass
+
+				// draw grass
+				m_2dRenderer->setRenderColour(1, 1, 1);
+				m_2dRenderer->setUVRect((5 * w + (5 * 1) * pw), (1 * h + (1 * 1) * ph), w, h);
+			}
+			else if (pixels[index + 0] == 0 &&
+				pixels[index + 1] == 0 &&
+				pixels[index + 2] == 255) { // blue is water
+				
+				// draw water
+				m_2dRenderer->setRenderColour(1, 1, 1);
+				m_2dRenderer->setUVRect((0 * w + (0 * 1) * pw), (0 * h + 0 * ph), w, h);
+			}
+			else if (pixels[index + 0] == 255 &&
+				pixels[index + 1] == 0 &&
+				pixels[index + 2] == 0) { // red is our pathfinding mesh
+				
+				// dirt path
+				m_2dRenderer->setRenderColour(1, 1, 1);
+				m_2dRenderer->setUVRect((6 * w + (6 * 1) * pw), (1 * h + (1 * 1) * ph), w, h);
+			}
+
+			else if (pixels[index + 0] == 0 &&
+				pixels[index + 1] == 255 &&
+				pixels[index + 2] == 255) { // teal is our soldier respawn nodes
+
+				// draw a patch
+				m_2dRenderer->setRenderColour(1, 1, 1);
+				m_2dRenderer->setUVRect((15 * w + (15 * 1) * pw), (18 * h + (18 * 1) * ph), w, h);
+			}
+			else if (pixels[index + 0] == 0 &&
+				pixels[index + 1] == 0 &&
+				pixels[index + 2] == 0) { // black is our zombie spawn point
+
+				// draw dirt patch
+				m_2dRenderer->setRenderColour(1, 1, 1);
+				m_2dRenderer->setUVRect((3 * w + (3 * 1) * pw), (10 * h + (10 * 1) * ph), w, h);
+			}
+
+			float posX = float(x * 20 + 10); // 20 pixel seperation starting 10 pixels in
+			float posY = getWindowHeight() - float(y * 20 + 10);
+
+			m_2dRenderer->drawSprite(&m_spriteSheet, // reference to texture, passing nullptr draws a square
+				posX, posY,
+				20, 20, // width, height
+				0, // rotation
+				10 // depth
+			);
+		}
+	}
+
+	// used for drawing obstacles
+/*	for (auto obstacle : m_boxObstacles) {
 		//if (rayCircleIntersection(0, 0, // start of the line
 		//	x, y, // direction of the line
 		//	circle.x, circle.y, circle.r, // circle to collide with
@@ -495,10 +511,11 @@ void AssessmentApp::draw() {
 			m_2dRenderer->setRenderColour(0, 1, 1);
 			m_2dRenderer->drawBox(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
 		//}
-	}
-
-	for (auto node : m_nodes) {
-/*		if (node == m_start) {
+	} */
+	
+	// used to draw nav mesh
+/*	for (auto node : m_nodes) {
+		if (node == m_start) {
 			m_2dRenderer->setRenderColour(0, 1, 0);
 			m_2dRenderer->drawBox(node->x, node->y, 8, 8);
 		}
@@ -506,7 +523,7 @@ void AssessmentApp::draw() {
 			m_2dRenderer->setRenderColour(0, 0, 1);
 			m_2dRenderer->drawBox(node->x, node->y, 8, 8);
 		}
-		else { */
+		else { 
 			m_2dRenderer->setRenderColour(1, 0, 0);
 			m_2dRenderer->drawBox(node->x, node->y, 4, 4);
 //		}
@@ -519,167 +536,143 @@ void AssessmentApp::draw() {
 			m_2dRenderer->drawLine(node->x, node->y, target->x, target->y, 1, 1);
 		}
 	}
+*/
 
 	// draw soldier
 	int i = 0;
 	for (auto& soldier : m_soldiers) {
 
-		std::list<Pathfinding::Node*>* path = nullptr;
-		soldier.getBlackboard().get("path", &path);
-		// draw path
-		m_2dRenderer->setRenderColour(0, 1, 0);
-		for (auto node : *path) {
+		bool alive;
+		soldier.getBlackboard().get("isAlive", alive);
 
-			MyNode* s = (MyNode*)node;
-			MyNode* e = (MyNode*)node->previous;
+		if (alive) {
+			// draw path
+			/*std::list<Pathfinding::Node*>* path = nullptr;
+			soldier.getBlackboard().get("path", &path);
+			m_2dRenderer->setRenderColour(0, 1, 0);
+			for (auto node : *path) {
 
-			if (e != nullptr) {
-				m_2dRenderer->drawLine(s->x, s->y, e->x, e->y, 3, i);
-			}
-		}
+				MyNode* s = (MyNode*)node;
+				MyNode* e = (MyNode*)node->previous;
 
-		m_2dRenderer->setRenderColour(1, 1, 1);
-		soldier.getPosition(&x, &y);
-		m_2dRenderer->drawCircle(x, y, 5);
-/*		//m_2dRenderer->setUVRect((0 * w + 0 * pw), (11 * h + 11 * ph), w, h);
-		m_2dRenderer->drawSprite(&m_charSpriteSheet, // reference to texture, passing nullptr draws a square
+				if (e != nullptr) {
+					m_2dRenderer->drawLine(s->x, s->y, e->x, e->y, 3, i);
+				}
+			}*/
+
+			m_2dRenderer->setRenderColour(1, 1, 1);
+			soldier.getPosition(&x, &y);
+			//calcSpriteRotation(&soldier);
+			//m_2dRenderer->drawCircle(x, y, 5);
+
+			//float rotation;
+			//soldier.getBlackboard().get("spriteRotation", rotation);
+
+			float pw = 1.0f / m_charSpriteSheet.getWidth();
+			float ph = 1.0f / m_charSpriteSheet.getHeight();
+			float w = pw * 16.0f;
+			float h = ph * 16.0f;
+
+			m_2dRenderer->setRenderColour(1, 1, 1);
+			//m_2dRenderer->drawCircle(x, y, 5);
+			m_2dRenderer->setUVRect((0 * w + (0 * 1) * pw), (11 * h + (11 * 1) * ph), w, h);
+			m_2dRenderer->drawSprite(&m_charSpriteSheet, // reference to texture, passing nullptr draws a square
 			x, y,
 			20, 20, // width, height
 			0, // rotation
-			8 // depth
-		); */
+			0 // depth
+			); 
+			
+			int health;
+			soldier.getBlackboard().get("HP", health);
+			std::string str = std::to_string(health);
+			const char* cstr = str.c_str();
+			m_2dRenderer->drawText(m_font, cstr, x, y + 20);
 
-		int health;
-		soldier.getBlackboard().get("HP", health);
-		std::string str = std::to_string(health);
-		const char* cstr = str.c_str();
-		m_2dRenderer->drawText(m_font, cstr, x, y + 40);
+/*			bool alive;
+			soldier.getBlackboard().get("isAlive", alive);
+			if (alive) {
+				str = "alive";
+			}
+			else if (!alive) {
+				str = "dead";
+			}
+			cstr = str.c_str();
+			m_2dRenderer->drawText(m_font, cstr, x, y + 20);
 
-		bool alive;
-		soldier.getBlackboard().get("isAlive", alive);
-		if (alive) {
-			str = "alive";
+			// draw enemy's detection radius
+			m_2dRenderer->setRenderColour(1, 1, 0, 0.25f);
+			m_2dRenderer->drawCircle(x, y, m_detectRadius, 10);
+*/			
+			++i;
 		}
-		else if (!alive) {
-			str = "dead";
-		}
-		cstr = str.c_str();
-		m_2dRenderer->drawText(m_font, cstr, x, y + 20);
-		
-		// draw enemy's detection radius
-		m_2dRenderer->setRenderColour(1, 1, 0, 0.25f);
-		m_2dRenderer->drawCircle(x, y, m_detectRadius, 10);
-
-		++i;
 	}
-	
-	// draw player as a green circle
-	m_player.getPosition(&x, &y);
-	m_2dRenderer->setRenderColour(0, 1, 0);
-	m_2dRenderer->drawCircle(x, y, 5);
-
-	screenWrap(x, y);
-	m_player.setPosition(x, y);
-
-	time_t rawtime;
-	struct tm* timeinfo;
-
-	time(&rawtime);
-	timeinfo = localtime(&rawtime);
-	unsigned int seed = (unsigned int)timeinfo->tm_sec;
-
-	//float i = 0;
 
 	// draw the enemy as a red circle
 	for (auto& enemy : m_enemies) {
-
-		// sprite offsets for charSpriteSheet 
-		float pw = 1.0f / m_spriteSheet.getWidth();
-		float ph = 1.0f / m_spriteSheet.getHeight();
-		float w = pw * 64.0f;
-		float h = ph * 64.0f;
-
-		enemy.getPosition(&x, &y);
-
-		// draw enemy's detection radius
-		m_2dRenderer->setRenderColour(1, 1, 0, 0.25f);
-		m_2dRenderer->drawCircle(x, y, m_detectRadius, 10);
-
-		float rx = 0, ry = 0; 
-		Vector2 *v = {};
-		enemy.getBlackboard().get("velocity", &v);
-
-		rx = v->x + x; // normalised x;
-		ry = v->y + y; // normalised y;
-
-		int health;
-		enemy.getBlackboard().get("HP", health);
-		std::string str = std::to_string(health);
-		const char* cstr = str.c_str();
-		m_2dRenderer->drawText(m_font, cstr, x, y + 40);
-
 		bool alive;
 		enemy.getBlackboard().get("isAlive", alive);
+
 		if (alive) {
-			str = "alive";
+			enemy.getPosition(&x, &y);
+			//calcSpriteRotation(&enemy);
+
+/*			// draw enemy's detection radius
+			m_2dRenderer->setRenderColour(1, 1, 0, 0.25f);
+			m_2dRenderer->drawCircle(x, y, m_detectRadius, 10);
+
+			float rx = 0, ry = 0;
+			Vector2 *v = {};
+			enemy.getBlackboard().get("velocity", &v);
+
+			rx = v->x + x; // normalised x;
+			ry = v->y + y; // normalised y;
+*/
+			int health;
+			enemy.getBlackboard().get("HP", health);
+			std::string str = std::to_string(health);
+			const char* cstr = str.c_str();
+			m_2dRenderer->drawText(m_font, cstr, x, y + 20);
+
+/*			bool alive;
+			enemy.getBlackboard().get("isAlive", alive);
+			if (alive) {
+				str = "alive";
+			}
+			else if (!alive) {
+				str = "dead";
+			}
+			cstr = str.c_str();
+			m_2dRenderer->drawText(m_font, cstr, x, y + 20);
+
+			// draw enemy direction vector
+			m_2dRenderer->setRenderColour(1, 1, 0);
+			m_2dRenderer->drawLine(x, y, rx, ry);
+*/
+			//float rotation;
+			//enemy.getBlackboard().get("spriteRotation", rotation);
+
+			// sprite offsets for charSpriteSheet 
+			float pw = 1.0f / m_charSpriteSheet.getWidth();
+			float ph = 1.0f / m_charSpriteSheet.getHeight();
+			float w = pw * 16.0f;
+			float h = ph * 16.0f;
+
+			//draw enemy sprite
+			m_2dRenderer->setRenderColour(1, 1, 1);
+			//m_2dRenderer->drawCircle(x, y, 5);
+			m_2dRenderer->setUVRect((0 * w + (0 * 1) * pw), (3 * h + (3 * 1) * ph), w, h);
+			m_2dRenderer->drawSprite(&m_charSpriteSheet, // reference to texture, passing nullptr draws a square
+				x, y,
+				20, 20, // width, height
+				0, // rotation
+				0 // depth
+			);
 		}
-		else if (!alive) {
-			str = "dead";
-		}
-		cstr = str.c_str();
-		m_2dRenderer->drawText(m_font, cstr, x, y + 20);
 
-		// draw enemy direction vector
-		m_2dRenderer->setRenderColour(1, 1, 0);
-		m_2dRenderer->drawLine(x, y, rx, ry);
-
-		float rotation;
-		enemy.getBlackboard().get("spriteRotation", rotation);
-
-		//draw enemy sprite
-		m_2dRenderer->setRenderColour(1, 0, 0);
-		m_2dRenderer->drawCircle(x, y, 5);
-/*		m_2dRenderer->setUVRect((8.0f * w + 8.0f * pw), (4.0f * h + 4.0f * ph), w, h);
-		m_2dRenderer->drawSprite(&m_spriteSheet, // reference to texture, passing nullptr draws a square
-			x, y,
-			100, 100, // width, height
-			0, // rotation
-			0 // depth
-		); */
-
-		screenWrap(x, y);
-		enemy.setPosition(x, y);
 	}
 
-/*	// demonstrate animation
-	m_2dRenderer->setUVRect(int(m_timer) % 8 / 8.0f, 0, 1.f / 8, 1.f / 8);
-	m_2dRenderer->drawSprite(m_texture, 200, 200, 100, 100);
-
-	// demonstrate spinning sprite
-	m_2dRenderer->setUVRect(0, 0, 1, 1);
-	m_2dRenderer->drawSprite(m_shipTexture, 600, 400, 0, 0, m_timer, 1);
-
-	// draw a thin line
-	m_2dRenderer->drawLine(300, 300, 600, 400, 2, 1);
-
-	// draw a moving purple circle
-	m_2dRenderer->setRenderColour(1, 0, 1, 1);
-	m_2dRenderer->drawCircle(sin(m_timer) * 100 + 600, 150, 50);
-
-	// draw a rotating red box
-	m_2dRenderer->setRenderColour(1, 0, 0, 1);
-	m_2dRenderer->drawBox(600, 500, 60, 20, m_timer);
-
-	// draw a slightly rotated sprite with no texture, coloured yellow
-	m_2dRenderer->setRenderColour(1, 1, 0, 1);
-	m_2dRenderer->drawSprite(nullptr, 400, 400, 50, 50, 3.14159f * 0.25f, 1);
-
-	// output some text, uses the last used colour
-	char fps[32];
-	sprintf_s(fps, 32, "FPS: %i", getFPS());
-	m_2dRenderer->drawText(m_font, fps, 0, 720 - 32); */
-
-	m_2dRenderer->setRenderColour(1, 1, 1);
+	m_2dRenderer->setRenderColour(0, 0, 0);
 	m_2dRenderer->drawText(m_font, "Press ESC to Quit", 0, 0);
 
 	// done drawing sprites
@@ -697,3 +690,73 @@ void AssessmentApp::screenWrap(float & x, float & y)
 		y += getWindowHeight();
 }
 
+void AssessmentApp::calcSpriteRotation(GameObject* gameObject)
+{
+	float x = 0, y = 0;
+	gameObject->getPosition(&x, &y);
+
+	// calculate sprite rotation
+	float rotation = 0.0f; // rotation in radians
+						   //		float rx = 0, ry = 0; 
+	Vector2 *v = {};
+	gameObject->getBlackboard().get("velocity", &v);
+	float vLength = sqrt(v->x*v->x + v->y*v->y);
+
+	float rx = v->x + x; // normalised x;
+	float ry = v->y + y; // normalised y;
+
+	std::string str = std::to_string(v->x);
+	const char* cstr = str.c_str();
+	m_2dRenderer->drawText(m_font, cstr, x, y + 40);
+	str = std::to_string(v->y);
+	cstr = str.c_str();
+	m_2dRenderer->drawText(m_font, cstr, x, y + 20);
+
+	// draw enemy direction vector
+	//m_2dRenderer->setRenderColour(1, 1, 0);
+	//m_2dRenderer->drawLine(x, y, rx, ry);
+
+	if (vLength > 0.0f) {
+		if (v->x == 0) {
+			if (v->y == 0) {
+				// do nothing, not moving
+			}
+			else if (v->y > 0) {
+				rotation = (float)M_PI_2;
+			}
+			else if (v->y < 0) {
+				rotation = 3 * (float)M_PI_2;
+			}
+			else {}
+		}
+		else if (v->x > 0) {
+			if (v->y == 0) {
+				rotation = 0.0f;
+			}
+			else if (v->y > 0) {
+				rotation = cosf(v->x / vLength);
+			}
+			else if (v->y < 0) {
+				rotation = (3 * (float)M_PI_2) + cosf(v->y / vLength);
+			}
+			else {}
+		}
+		else if (v->x < 0) {
+			if (v->y == 0) {
+				rotation = (float)M_PI;
+			}
+			else if (v->y > 0) {
+				rotation = (float)M_PI_2 + cosf(v->y / vLength);
+			}
+			else if (v->y < 0) {
+				rotation = (float)M_PI + cosf(v->x / vLength);
+			}
+			else {}
+		}
+		else {}
+	}
+	else { gameObject->getBlackboard().get("spriteRotation", rotation); }
+
+	// update blackboard
+	gameObject->getBlackboard().set("spriteRotation", rotation);
+}

@@ -203,7 +203,7 @@ public:
 	virtual ~PathState() {}
 
 	virtual void	onEnter(GameObject* gameObject) {}
-	
+
 	virtual void	onExit(GameObject* gameObject) {}
 
 	virtual void update(GameObject* gameObject, float deltaTime);

@@ -36,7 +36,7 @@ void GameObject::update(GameObject* target, float deltaTime)
 
 	if (health <= 0) {
 		this->getBlackboard().set("attacking", false);
-		this->getBlackboard().set("isAlive", true);
+		this->getBlackboard().set("isAlive", false);
 	}
 	else {
 		// if still alive, attack!

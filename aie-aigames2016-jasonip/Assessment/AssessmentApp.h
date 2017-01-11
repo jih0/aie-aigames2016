@@ -29,6 +29,7 @@ public:
 protected:
 
 	void screenWrap(float &x, float &y);
+	void calcSpriteRotation(GameObject* gameObject);
 
 	aie::Renderer2D*	m_2dRenderer;
 	aie::Font*			m_font;
@@ -36,6 +37,8 @@ protected:
 	aie::Texture		m_map;
 	aie::Texture		m_spriteSheet;
 	aie::Texture		m_charSpriteSheet;
+	aie::Texture		m_soldierSprite;
+	aie::Texture		m_zombieSprite;
 
 	float				m_timer;
 	float				m_detectRadius;
